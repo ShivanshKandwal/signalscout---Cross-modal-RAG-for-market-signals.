@@ -1,0 +1,127 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "signalscout"
+version = "0.1.0"
+description = "Multimodal Market Intelligence Agent with LLMOps"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "SignalScout" }]
+
+dependencies = [
+    # Core
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.28.0",
+    "aiofiles>=24.1.0",
+
+    # Database
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14.0",
+    "pgvector>=0.3.6",
+
+    # LangGraph / LangChain
+    "langgraph>=0.2.56",
+    "langchain>=0.3.14",
+    "langchain-community>=0.3.14",
+    "langchain-huggingface>=0.1.2",
+    "langchain-openai>=0.3.0",
+    "langsmith>=0.2.9",
+
+    # LlamaIndex (document pipelines)
+    "llama-index>=0.12.0",
+    "llama-index-vector-stores-postgres>=0.3.0",
+
+    # HuggingFace
+    "transformers>=4.47.0",
+    "huggingface-hub>=0.27.0",
+    "datasets>=3.2.0",
+    "accelerate>=1.2.0",
+    "tokenizers>=0.21.0",
+    "sentence-transformers>=3.3.1",
+    "optimum>=1.23.0",
+
+    # Audio
+    "openai-whisper>=20240930",
+    "soundfile>=0.12.1",
+    "librosa>=0.10.2",
+    "pyannote.audio>=3.3.2",
+
+    # Document processing
+    "docling>=2.14.0",
+    "unstructured[pdf]>=0.16.11",
+    "pymupdf>=1.25.1",
+    "pillow>=11.1.0",
+
+    # Retrieval
+    "rank-bm25>=0.2.2",
+    "faiss-cpu>=1.9.0",
+
+    # Eval
+    "ragas>=0.2.6",
+
+    # Data / Finance
+    "yfinance>=0.2.51",
+    "mplfinance>=0.12.10b0",
+    "requests>=2.32.3",
+    "feedparser>=6.0.11",
+
+    # Background workers
+    "celery[redis]>=5.4.0",
+    "redis>=5.2.1",
+    "apscheduler>=3.10.4",
+
+    # NLP utilities
+    "datasketch>=1.6.5",
+    "scikit-learn>=1.6.0",
+    "numpy>=2.2.0",
+    "pandas>=2.2.3",
+    "matplotlib>=3.10.0",
+
+    # Observability
+    "prometheus-client>=0.21.1",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+
+    # Utils
+    "tenacity>=9.0.0",
+    "rich>=13.9.4",
+    "typer>=0.15.1",
+    "instructor>=1.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.6",
+    "mypy>=1.14.0",
+    "pre-commit>=4.0.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["signalscout"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

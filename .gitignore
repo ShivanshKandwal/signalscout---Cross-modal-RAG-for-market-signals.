@@ -1,0 +1,33 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+.python-version
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Data (large files)
+data/bm25_indexes/*.pkl
+data/charts/*.png
+data/audio/*.mp3
+data/audio/*.wav
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Docker
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
