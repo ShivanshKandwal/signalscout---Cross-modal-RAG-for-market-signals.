@@ -21,6 +21,8 @@ const SAMPLE_QUERIES = [
   "What is the current technical trend?",
 ]
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+
 export default function QueryPanel({ ticker, onTickerChange, onSubmit, loading }) {
   const [query, setQuery] = useState("")
   const [pendingFile, setPendingFile] = useState(null) // { type, name, file }
@@ -48,7 +50,7 @@ export default function QueryPanel({ ticker, onTickerChange, onSubmit, loading }
       formData.append("ticker", ticker)
 
       try {
-        const response = await fetch(`http://localhost:8000/api/ingest/${pendingFile.type}`, {
+        const response = await fetch(`${API_URL}/api/ingest/${pendingFile.type}`, {
           method: "POST",
           body: formData,
         })

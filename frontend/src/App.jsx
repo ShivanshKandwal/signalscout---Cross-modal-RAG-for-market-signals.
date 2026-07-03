@@ -11,6 +11,8 @@ import { GridBeam } from "./components/ui/grid-beam"
 import ShaderBackground from "./components/ui/shader-background"
 import { Radio, BarChart3, Clock, AlertOctagon, Coins, Cpu } from "lucide-react"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+
 const AGENT_STEPS = [
   { id: "orchestrator", label: "Orchestrator", icon: "Target" },
   { id: "retrieval",    label: "Retrieval Agent", icon: "Search" },
@@ -32,7 +34,7 @@ export default function App() {
 
   const fetchAnalytics = async () => {
     try {
-      const res = await fetch("/api/analytics/system")
+      const res = await fetch(`${API_URL}/api/analytics/system`)
       const data = await res.json()
       setAnalytics(data)
     } catch (e) {
@@ -53,7 +55,7 @@ export default function App() {
     try {
       const { fetchEventSource } = await import("@microsoft/fetch-event-source")
 
-      await fetchEventSource("/api/brief/stream", {
+      await fetchEventSource(`${API_URL}/api/brief/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, ticker, stream: true }),
