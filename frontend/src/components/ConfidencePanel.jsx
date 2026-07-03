@@ -1,23 +1,25 @@
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts'
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts"
+import { TextureCard, TextureCardContent } from "./ui/texture-card"
+import { AnimatedNumber } from "./ui/animated-number"
 
 const METRIC_COLORS = {
-  faithfulness: '#6382ff',
-  answer_relevancy: '#34d399',
-  context_recall: '#f59e0b',
-  context_precision: '#a78bfa',
+  faithfulness: "#d444ef",       // Pink/purple
+  answer_relevancy: "#f472b6",   // Light pink
+  context_recall: "#38bdf8",     // Blue
+  context_precision: "#a78bfa",  // Lavender
 }
 
 export default function ConfidencePanel({ confidence }) {
   if (!confidence) return null
 
   const metrics = [
-    { label: 'Faithfulness', key: 'faithfulness' },
-    { label: 'Relevancy', key: 'answer_relevancy' },
-    { label: 'Context Recall', key: 'context_recall' },
-    { label: 'Precision', key: 'context_precision' },
+    { label: "Faithfulness", key: "faithfulness" },
+    { label: "Relevancy", key: "answer_relevancy" },
+    { label: "Recall", key: "context_recall" },
+    { label: "Precision", key: "context_precision" },
   ]
 
-  const radarData = metrics.map(m => ({
+  const radarData = metrics.map((m) => ({
     metric: m.label,
     score: Math.round((confidence[m.key] || 0) * 100),
     fullMark: 100,
@@ -26,57 +28,103 @@ export default function ConfidencePanel({ confidence }) {
   const overall = confidence.overall || 0
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <span>🎯</span> Confidence
-        <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '14px', color: overall > 0.7 ? 'var(--accent-secondary)' : overall > 0.5 ? 'var(--accent-warning)' : 'var(--accent-danger)' }}>
-          {(overall * 100).toFixed(0)}%
-        </span>
-      </div>
-      <div className="card-body">
-        <ResponsiveContainer width="100%" height={160}>
-          <RadarChart data={radarData}>
-            <PolarGrid stroke="rgba(255,255,255,0.06)" />
-            <PolarAngleAxis
-              dataKey="metric"
-              tick={{ fill: '#8b99b8', fontSize: 10 }}
+    <TextureCard className="w-full">
+      <TextureCardContent className="flex flex-col p-5 gap-4">
+        {/* Header with animated Overall Score */}
+        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-pink-400">🎯</span>
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              Confidence Score
+            </span>
+          </div>
+          <div className="text-xl font-bold font-mono text-pink-400 pl-2">
+            <AnimatedNumber
+              value={Math.round(overall * 100)}
+              format={(n) => `${n}%`}
             />
-            <Radar
-              name="Score"
-              dataKey="score"
-              stroke="#6382ff"
-              fill="#6382ff"
-              fillOpacity={0.2}
-              strokeWidth={2}
-            />
-            <Tooltip
-              contentStyle={{ background: '#0d1525', border: '1px solid rgba(99,130,255,0.3)', borderRadius: '8px', fontSize: '12px' }}
-              formatter={(val) => [`${val}%`, '']}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
+          </div>
+        </div>
 
-        <div className="confidence-grid">
-          {metrics.map(m => {
+        {/* Radar Chart Visual */}
+        <div className="relative w-full h-[180px] flex items-center justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={radarData}>
+              <defs>
+                <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#d444ef" stopOpacity={0.45} />
+                  <stop offset="60%" stopColor="#d444ef" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="#d444ef" stopOpacity={0.0} />
+                </radialGradient>
+                <filter id="radar-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="6" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <PolarGrid stroke="rgba(255,255,255,0.04)" />
+              <PolarAngleAxis
+                dataKey="metric"
+                tick={{ fill: "#a1a1aa", fontSize: 9, fontWeight: 600 }}
+              />
+              <Radar
+                name="Score"
+                dataKey="score"
+                stroke="#d444ef"
+                fill="url(#radar-glow)"
+                fillOpacity={0.8}
+                strokeWidth={2}
+                filter="url(#radar-glow-filter)"
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "rgba(9, 9, 11, 0.95)",
+                  border: "1px solid rgba(212,68,239,0.3)",
+                  borderRadius: "10px",
+                  fontSize: "11px",
+                  color: "#fafafa",
+                  boxShadow: "0 0 15px rgba(212,68,239,0.2)",
+                }}
+                formatter={(val) => [`${val}%`, ""]}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="flex flex-col gap-3">
+          {metrics.map((m) => {
             const val = confidence[m.key] || 0
             const color = METRIC_COLORS[m.key]
             return (
-              <div key={m.key} className="confidence-metric">
-                <span className="metric-label">{m.label}</span>
-                <div className="metric-bar-track">
+              <div key={m.key} className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-400 font-medium">{m.label}</span>
+                  <span className="font-mono font-bold" style={{ color }}>
+                    <AnimatedNumber
+                      value={Math.round(val * 100)}
+                      format={(n) => `${n}%`}
+                    />
+                  </span>
+                </div>
+                {/* Custom Neumorphic Progress track */}
+                <div className="w-full h-1.5 bg-neutral-950/80 rounded-full overflow-hidden border border-white/[0.02]">
                   <div
-                    className="metric-bar-fill"
-                    style={{ width: `${val * 100}%`, background: color }}
+                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                    style={{
+                      width: `${val * 100}%`,
+                      background: `linear-gradient(90deg, ${color}cc, ${color})`,
+                      boxShadow: `0 0 10px ${color}55`,
+                    }}
                   />
                 </div>
-                <span className="metric-value" style={{ color, fontSize: '14px' }}>
-                  {(val * 100).toFixed(0)}%
-                </span>
               </div>
             )
           })}
         </div>
-      </div>
-    </div>
+      </TextureCardContent>
+    </TextureCard>
   )
 }
