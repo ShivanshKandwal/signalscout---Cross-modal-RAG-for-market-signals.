@@ -56,7 +56,12 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
             resp.raise_for_status()
             return resp.json()
         except Exception as e:
-            logger.warning(f"HF Inference API failed: {e}. Falling back to local SentenceTransformer...")
+            logger.error(f"HF Inference API failed: {e}")
+            if os.environ.get("APP_ENV") == "production":
+                raise RuntimeError(
+                    "Embedding API is temporarily unavailable. Local fallback disabled to prevent OOM crash."
+                ) from e
+            logger.warning("Falling back to local SentenceTransformer...")
 
     model = _get_model()
     embeddings = model.encode(
