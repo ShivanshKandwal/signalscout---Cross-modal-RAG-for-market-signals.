@@ -13,12 +13,9 @@ from pathlib import Path
 from typing import Iterator, Optional
 from uuid import uuid4
 
-import mplfinance as mpf
 import pandas as pd
 import yfinance as yf
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq
-import torch
 
 from signalscout.config import settings
 from signalscout.models import Chunk, ChunkMetadata, Modality
@@ -32,6 +29,8 @@ _vlm_model = None
 def _get_vlm():
     global _vlm_processor, _vlm_model
     if _vlm_model is None:
+        import torch
+        from transformers import AutoProcessor, AutoModelForVision2Seq
         logger.info(f"Loading VLM: {settings.hf_vlm_model}")
         _vlm_processor = AutoProcessor.from_pretrained(
             settings.hf_vlm_model,
@@ -58,6 +57,7 @@ def generate_chart(
     period: '3mo', '6mo', '1y', '2y'
     """
     logger.info(f"[CHART] Fetching OHLCV for {ticker} ({period})")
+    import mplfinance as mpf
     data = yf.download(ticker, period=period, progress=False, auto_adjust=True)
 
     if data.empty:

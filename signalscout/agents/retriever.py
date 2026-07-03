@@ -13,7 +13,6 @@ from uuid import UUID
 
 import numpy as np
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +32,7 @@ _reranker: Optional[CrossEncoder] = None
 def _get_reranker() -> CrossEncoder:
     global _reranker
     if _reranker is None:
+        from sentence_transformers import CrossEncoder
         logger.info(f"Loading re-ranker: {settings.hf_reranker_model}")
         _reranker = CrossEncoder(
             settings.hf_reranker_model,

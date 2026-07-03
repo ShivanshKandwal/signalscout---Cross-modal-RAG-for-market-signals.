@@ -10,9 +10,6 @@ import logging
 from typing import List, Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from signalscout.config import settings
 from signalscout.models import Chunk
 from signalscout.models.database import ChunkORM
@@ -26,6 +23,7 @@ _model: Optional[SentenceTransformer] = None
 def _get_model() -> SentenceTransformer:
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         logger.info(f"Loading embedding model: {settings.hf_embedding_model}")
         _model = SentenceTransformer(
             settings.hf_embedding_model,

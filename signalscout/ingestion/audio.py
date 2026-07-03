@@ -13,8 +13,6 @@ from typing import Iterator, List, Optional, Tuple
 from uuid import uuid4
 
 import numpy as np
-from transformers import pipeline
-
 from signalscout.config import settings
 from signalscout.models import Chunk, ChunkMetadata, Modality
 
@@ -27,6 +25,7 @@ _summarizer = None
 def _get_asr():
     global _asr_pipeline
     if _asr_pipeline is None:
+        from transformers import pipeline
         logger.info(f"Loading ASR model: {settings.hf_asr_model}")
         _asr_pipeline = pipeline(
             "automatic-speech-recognition",
@@ -42,6 +41,7 @@ def _get_asr():
 def _get_summarizer():
     global _summarizer
     if _summarizer is None:
+        from transformers import pipeline
         _summarizer = pipeline(
             "summarization",
             model=settings.hf_summarization_model,
