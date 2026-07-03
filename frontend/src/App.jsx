@@ -6,7 +6,7 @@ import ConfidencePanel from "./components/ConfidencePanel"
 import ContradictionAlert from "./components/ContradictionAlert"
 import AgentStatusBar from "./components/AgentStatusBar"
 import { GridBeam } from "./components/ui/grid-beam"
-import { ShaderGradientCanvas, ShaderGradient } from "shadergradient"
+import ShaderBackground from "./components/ui/shader-background"
 
 const AGENT_STEPS = [
   { id: "orchestrator", label: "Orchestrator", icon: "🎯" },
@@ -78,86 +78,98 @@ export default function App() {
   }
 
   return (
-    <div className="relative w-full min-h-screen overflow-x-hidden text-neutral-200">
+    <div className="relative w-full min-h-screen overflow-x-hidden text-neutral-200 bg-black">
       
-      {/* ── 1. Interactive Black-Pink 3D Shader Gradient Canvas ──────────────── */}
-      <div className="fixed inset-0 z-0 pointer-events-none select-none opacity-45">
-        <ShaderGradientCanvas style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}>
-          <ShaderGradient
-            control="query"
-            urlString="https://www.shadergradient.co/customize?animate=on&axesHelper=off&bgColor1=%23030303&bgColor2=%23030303&brightness=1.1&cAzimuthAngle=180&cDistance=3.5&cPolarAngle=90&cameraZoom=1&color1=%23d444ef&color2=%23030303&color3=%23f472b6&destination=onCanvas&embedMode=off&envMap=off&fog=on&fov=45&frameRate=15&glow=0.2&grain=on&lightType=3d&noiseStrength=3&noiseType=perlin&pixelDensity=1&play=on&positionX=0&positionY=0&positionZ=0&radialDistortion=0.5&range=0.5&rotationX=0&rotationY=0&rotationZ=0&type=water"
-          />
-        </ShaderGradientCanvas>
+      {/* ── 1. Real-Time WebGL Fluid Shader Gradient Background (60fps) ────── */}
+      <div className="fixed inset-0 z-0 pointer-events-none select-none opacity-40">
+        <ShaderBackground />
         <div className="absolute inset-0 vignette-overlay z-10" />
       </div>
 
-      {/* ── 2. Page Container ────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex flex-col md:flex-row min-h-screen w-full">
-        
-        {/* Left Side Navigation & Controls */}
-        <div className="w-full md:w-[350px] md:min-h-screen flex flex-col glass-panel border-r border-white/5 relative shrink-0">
-          
-          {/* Header & Laser Grid Beam */}
-          <div className="w-full h-[180px] shrink-0 border-b border-white/5 bg-neutral-950/20 relative">
-            <GridBeam rows={4} cols={5} strength={0.4} duration={5} className="absolute inset-0">
-              <div className="w-full h-full flex flex-col justify-end p-5 z-20 relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="text-xl px-2.5 py-1.5 bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-xl shadow-[0_0_15px_rgba(212,68,239,0.2)]">
-                    📡
-                  </div>
-                  <span className="text-lg font-bold tracking-tight text-neutral-100 pl-1">
-                    SignalScout
-                  </span>
-                </div>
-                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest pl-1">
-                  Multimodal Intelligence Agent
+      {/* ── 2. Header Grid Header Layout ────────────────────────────────────────── */}
+      <header className="relative z-10 w-full border-b border-white/5 bg-neutral-950/40 backdrop-blur-md">
+        <GridBeam rows={3} cols={8} strength={0.35} duration={6} className="w-full py-4 px-6 md:px-12">
+          <div className="flex items-center justify-between z-20 relative w-full">
+            <div className="flex items-center gap-3">
+              <div className="text-xl px-2.5 py-1.5 bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-xl shadow-[0_0_15px_rgba(212,68,239,0.2)]">
+                📡
+              </div>
+              <div>
+                <h1 className="text-lg font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 via-pink-400 to-indigo-400">
+                  SignalScout
+                </h1>
+                <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest">
+                  Cross-Modal RAG Market Analysis Platform
                 </p>
               </div>
-            </GridBeam>
+            </div>
+            
+            {/* Morphing Dynamic Island Notch */}
+            <div className="hidden sm:block shrink-0">
+              <AgentStatusBar
+                steps={AGENT_STEPS}
+                activeAgents={activeAgents}
+                completedAgents={completedAgents}
+              />
+            </div>
           </div>
+        </GridBeam>
+      </header>
 
-          {/* Action Center Panels */}
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 select-none">
+      {/* ── 3. Main Dashboard Workspace Layout ─────────────────────────────── */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8 flex flex-col gap-8">
+        
+        {/* Mobile Dynamic Island Status Bar */}
+        <div className="block sm:hidden w-full">
+          <AgentStatusBar
+            steps={AGENT_STEPS}
+            activeAgents={activeAgents}
+            completedAgents={completedAgents}
+          />
+        </div>
+
+        {/* CENTER STAGE: Huge Prompt search console */}
+        <section className="w-full flex justify-center z-20">
+          <div className="w-full max-w-4xl">
             <QueryPanel
               ticker={ticker}
               onTickerChange={setTicker}
               onSubmit={handleSubmit}
               loading={loading}
             />
-
-            <AgentStatusBar
-              steps={AGENT_STEPS}
-              activeAgents={activeAgents}
-              completedAgents={completedAgents}
-            />
-
-            {brief && <ConfidencePanel confidence={brief.confidence} />}
           </div>
-        </div>
+        </section>
 
-        {/* Main Brief Workspace Panel */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col gap-6">
-          {/* Contradiction Alert Box */}
-          {brief?.contradictions?.length > 0 && (
-            <ContradictionAlert contradictions={brief.contradictions} />
-          )}
+        {/* Contradiction Alert Box */}
+        {brief?.contradictions?.length > 0 && (
+          <ContradictionAlert contradictions={brief.contradictions} />
+        )}
 
-          {/* Brief and Citations Workspace Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start w-full">
+        {/* Analysis Dashboard Workspace Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start w-full">
+          
+          {/* Main Content Area - Renders Investment Brief */}
+          <div className="flex flex-col gap-6">
             <BriefPanel
               brief={brief}
               loading={loading}
               onCitationClick={setActiveCitation}
             />
+          </div>
+
+          {/* Right Metrics & Citations Sidecard */}
+          <div className="flex flex-col gap-6 w-full lg:sticky lg:top-4">
+            {brief && <ConfidencePanel confidence={brief.confidence} />}
             <CitationPanel
               citations={brief?.citations || []}
               activeCitation={activeCitation}
               onCitationSelect={setActiveCitation}
             />
           </div>
-        </div>
 
-      </div>
+        </section>
+
+      </main>
     </div>
   )
 }
