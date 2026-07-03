@@ -81,7 +81,7 @@ export default function App() {
     <div className="relative w-full min-h-screen overflow-x-hidden text-neutral-200 bg-black">
       
       {/* ── 1. Real-Time WebGL Fluid Shader Gradient Background (60fps) ────── */}
-      <div className="fixed inset-0 z-0 pointer-events-none select-none opacity-40">
+      <div className="fixed inset-0 z-0 pointer-events-none select-none opacity-85">
         <ShaderBackground />
         <div className="absolute inset-0 vignette-overlay z-10" />
       </div>
@@ -146,7 +146,7 @@ export default function App() {
         )}
 
         {/* Analysis Dashboard Workspace Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start w-full">
+        <section className={`grid grid-cols-1 ${brief ? "lg:grid-cols-[1fr_360px]" : "max-w-4xl mx-auto w-full"} gap-8 items-start w-full`}>
           
           {/* Main Content Area - Renders Investment Brief */}
           <div className="flex flex-col gap-6">

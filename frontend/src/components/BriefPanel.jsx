@@ -21,19 +21,72 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
 
   if (!brief) {
     return (
-      <TextureCard className="w-full min-h-[300px] flex items-center justify-center">
-        <TextureCardContent className="flex flex-col items-center justify-center p-8 text-center max-w-md">
-          <div className="text-4xl mb-4 text-pink-500 filter drop-shadow-[0_0_15px_rgba(212,68,239,0.4)] animate-pulse">
+      <div className="w-full flex flex-col gap-8">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-neutral-950/40 backdrop-blur-md p-8 md:p-12 flex flex-col items-center text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          {/* Decorative glowing gradient sphere in the background */}
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-[100px] pointer-events-none" />
+          
+          <div className="text-5xl mb-6 text-pink-500 filter drop-shadow-[0_0_20px_rgba(212,68,239,0.5)] animate-pulse">
             📡
           </div>
-          <h3 className="text-base font-bold text-neutral-200 mb-2">
-            SignalScout Ready
-          </h3>
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            Select an asset, type in your question above, and trigger the multi-agent search graph to generate a report brief.
+
+          <h2 className="text-2xl md:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-400 to-indigo-400 mb-4 uppercase">
+            SignalScout Intelligence Engine
+          </h2>
+
+          <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed mb-8">
+            A state-of-the-art multi-agent RAG pipeline that extracts, verifies, and synthesizes complex market signals across corporate transcripts, slides, and filings.
           </p>
-        </TextureCardContent>
-      </TextureCard>
+
+          <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-pink-500/50 to-transparent" />
+        </div>
+
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <TextureCard className="flex-1">
+            <TextureCardContent className="p-6 flex flex-col gap-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 text-lg font-bold">
+                🔍
+              </div>
+              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+                Cross-Modal RAG
+              </h4>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Queries textual reports, presentation slides, and financial charts simultaneously to build a cohesive narrative.
+              </p>
+            </TextureCardContent>
+          </TextureCard>
+
+          <TextureCard className="flex-1">
+            <TextureCardContent className="p-6 flex flex-col gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-lg font-bold">
+                ⚠️
+              </div>
+              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+                Contradiction Check
+              </h4>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Automatically checks agent answers against source texts to identify and flag discrepancies or conflicting claims.
+              </p>
+            </TextureCardContent>
+          </TextureCard>
+
+          <TextureCard className="flex-1">
+            <TextureCardContent className="p-6 flex flex-col gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-lg font-bold">
+                📎
+              </div>
+              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+                Interactive Citations
+              </h4>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Provides clickable deep-linked source tags, letting you inspect the exact audio clip or paragraph behind every metric.
+              </p>
+            </TextureCardContent>
+          </TextureCard>
+        </div>
+      </div>
     )
   }
 
