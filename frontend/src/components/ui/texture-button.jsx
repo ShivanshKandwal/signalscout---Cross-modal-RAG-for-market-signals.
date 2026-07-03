@@ -70,7 +70,11 @@ const TextureButton = React.forwardRef(
 
     return (
       <Comp
-        className={cn(buttonVariantsOuter({ variant, size }), className)}
+        className={cn(
+          buttonVariantsOuter({ variant, size }),
+          props.disabled && "opacity-40 cursor-not-allowed pointer-events-none active:scale-100",
+          className
+        )}
         ref={ref}
         {...props}
       >

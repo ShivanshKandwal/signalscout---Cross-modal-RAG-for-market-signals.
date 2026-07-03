@@ -57,3 +57,4 @@ class SignalScoutState(TypedDict):
     agent_hops: int
     total_tokens: int
     latency_ms: float
+    token_cost_usd: float

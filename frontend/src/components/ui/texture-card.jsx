@@ -6,23 +6,12 @@ const TextureCard = React.forwardRef(({ className, children, ...props }, ref) =>
     <div
       ref={ref}
       className={cn(
-        "rounded-2xl border border-white/10 dark:border-white/5",
-        "shadow-2xl overflow-hidden backdrop-blur-md",
+        "rounded-2xl border border-pink-500/50 bg-neutral-950/50 backdrop-blur-md text-neutral-200 shadow-[0_0_25px_rgba(212,68,239,0.3)] overflow-hidden",
         className
       )}
       {...props}
     >
-      {/* Outer nested borders */}
-      <div className="border border-black/10 dark:border-neutral-900/80 rounded-[15px]">
-        <div className="border border-white/5 dark:border-neutral-950 rounded-[14px]">
-          <div className="border border-neutral-950/10 dark:border-neutral-900/60 rounded-[13px]">
-            {/* Inner background and styling */}
-            <div className="w-full border border-white/5 dark:border-neutral-800/40 text-neutral-200 bg-gradient-to-b from-neutral-900/85 to-neutral-950/95 rounded-[12px]">
-              {children}
-            </div>
-          </div>
-        </div>
-      </div>
+      {children}
     </div>
   )
 })

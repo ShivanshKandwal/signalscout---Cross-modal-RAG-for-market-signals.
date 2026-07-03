@@ -180,9 +180,9 @@ def _get_llm(timeout: int = 60):
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if groq_key and len(groq_key) > 10 and not groq_key.startswith("your_"):
         from langchain_openai import ChatOpenAI
-        logger.info("Using Groq (llama-3.3-70b-versatile)")
+        logger.info("Using Groq (llama-3.1-8b-instant)")
         return ChatOpenAI(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             api_key=groq_key,
             base_url="https://api.groq.com/openai/v1",
             temperature=0.1,
@@ -378,6 +378,75 @@ async def _fetch_live_context(ticker: str, query: str) -> List[RetrievedChunk]:
     return chunks
 
 
+async def _invoke_llm_tracked(
+    state: SignalScoutState,
+    system_content: str,
+    human_content: str,
+    timeout: int = 60
+) -> tuple[str, dict]:
+    """Helper to run LLM, estimate input/output tokens, compute cost, and return (content, state_updates)"""
+    llm = _get_llm(timeout)
+    system = SystemMessage(content=system_content)
+    human = HumanMessage(content=human_content)
+    
+    response = await llm.ainvoke([system, human])
+    
+    # Defaults based on character count (1 token approx 4 chars)
+    prompt_tokens = len(system_content + human_content) // 4
+    completion_tokens = len(response.content) // 4
+    
+    # Try to extract actual token counts from response metadata
+    meta = getattr(response, "response_metadata", {}) or {}
+    if "token_usage" in meta: # OpenAI / Groq
+        usage = meta["token_usage"] or {}
+        prompt_tokens = usage.get("prompt_tokens", prompt_tokens)
+        completion_tokens = usage.get("completion_tokens", completion_tokens)
+    elif "usage_metadata" in meta: # Google/Gemini
+        usage = meta["usage_metadata"] or {}
+        prompt_tokens = usage.get("prompt_token_count", prompt_tokens)
+        completion_tokens = usage.get("candidates_token_count", completion_tokens)
+    elif getattr(response, "usage_metadata", None): # Langchain standard
+        usage = response.usage_metadata or {}
+        prompt_tokens = usage.get("input_tokens", prompt_tokens)
+        completion_tokens = usage.get("output_tokens", completion_tokens)
+        
+    # Get model name to apply pricing
+    model_name = ""
+    if hasattr(llm, "model"):
+        model_name = getattr(llm, "model") or ""
+    elif hasattr(llm, "model_name"):
+        model_name = getattr(llm, "model_name") or ""
+    elif hasattr(llm, "model") and hasattr(llm.model, "model_name"):
+        model_name = llm.model.model_name
+    elif hasattr(llm, "model") and hasattr(llm.model, "model"):
+        model_name = getattr(llm.model.model, "model") or ""
+        
+    model_name = str(model_name).lower()
+    
+    # Pricing rates in USD per million tokens
+    input_rate = 0.150  # Default to gpt-4o-mini
+    output_rate = 0.600
+    
+    if "llama" in model_name:
+        input_rate = 0.59
+        output_rate = 0.79
+    elif "gemini" in model_name:
+        input_rate = 0.075
+        output_rate = 0.30
+        
+    cost = ((prompt_tokens * input_rate) + (completion_tokens * output_rate)) / 1_000_000
+    
+    accumulated_tokens = state.get("total_tokens", 0) + prompt_tokens + completion_tokens
+    accumulated_cost = state.get("token_cost_usd", 0.0) + cost
+    
+    updates = {
+        "total_tokens": accumulated_tokens,
+        "token_cost_usd": accumulated_cost,
+    }
+    
+    return response.content, updates
+
+
 # ── Agent Node Functions ───────────────────────────────────────────────────────
 
 async def orchestrator_node(state: SignalScoutState) -> Dict[str, Any]:
@@ -386,22 +455,21 @@ async def orchestrator_node(state: SignalScoutState) -> Dict[str, Any]:
     Routes to the appropriate retrieval instructions.
     """
     logger.info(f"[ORCHESTRATOR] Query: {state['query'][:80]}")
-    llm = _get_llm(timeout=30)
 
-    system = SystemMessage(content="""You are a financial analysis orchestrator.
+    system = """You are a financial analysis orchestrator.
 Given a user query about a stock ticker, extract:
 1. The primary intent (e.g., risk factors, earnings sentiment, growth outlook, financial metrics)
 2. Time range preference (e.g., last quarter, last year, recent)
 3. Modality preference (audio = management statements, document = SEC filings, news = market news, image = chart patterns)
 
-Respond as JSON: {"intent": "...", "time_range": "...", "preferred_modalities": [...], "retrieval_instructions": "..."}""")
+Respond as JSON: {"intent": "...", "time_range": "...", "preferred_modalities": [...], "retrieval_instructions": "..."}"""
 
-    human = HumanMessage(content=f"Ticker: {state['ticker']}\nQuery: {state['query']}")
+    human = f"Ticker: {state['ticker']}\nQuery: {state['query']}"
 
     try:
-        response = await llm.ainvoke([system, human])
+        content, tracking = await _invoke_llm_tracked(state, system, human, timeout=30)
         import json
-        text = response.content.strip()
+        text = content.strip()
         # Strip markdown code fences if present
         if "```" in text:
             text = text.split("```")[1]
@@ -411,15 +479,19 @@ Respond as JSON: {"intent": "...", "time_range": "...", "preferred_modalities": 
     except asyncio.TimeoutError:
         _slog(logger.warning, "[ORCHESTRATOR] LLM timed out. Using defaults.")
         parsed = {}
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
     except Exception as e:
         _slog(logger.warning, f"[ORCHESTRATOR] Parse failed: {repr(e)[:200]}. Using defaults.")
         parsed = {}
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
 
     return {
         "parsed_intent": parsed.get("intent", state["query"]),
         "time_range": parsed.get("time_range", "recent"),
         "retrieval_instructions": parsed.get("retrieval_instructions", state["query"]),
         "agent_hops": state.get("agent_hops", 0) + 1,
+        "total_tokens": tracking["total_tokens"],
+        "token_cost_usd": tracking["token_cost_usd"],
     }
 
 
@@ -512,7 +584,7 @@ Please try again later or ingest data for this ticker first using the data inges
         )
     context = "\n\n".join(context_parts)
 
-    system = SystemMessage(content="""You are a senior financial analyst.
+    system = """You are a senior financial analyst.
 Synthesize the provided sources into a structured investment brief with sections:
 ## Executive Summary (2-3 sentences)
 ## Key Findings (bullet points with [source number] citations)
@@ -522,9 +594,9 @@ Synthesize the provided sources into a structured investment brief with sections
 ## Conclusion
 
 Use [1], [2] etc. to cite specific sources. Be factual and evidence-based.
-If sources are limited, note this and provide general analysis based on available information.""")
+If sources are limited, note this and provide general analysis based on available information."""
 
-    human = HumanMessage(content=f"""
+    human = f"""
 Ticker: {state['ticker']}
 Query: {state['query']}
 Intent: {state.get('parsed_intent', 'general analysis')}
@@ -532,12 +604,11 @@ Intent: {state.get('parsed_intent', 'general analysis')}
 SOURCES:
 {context}
 
-Generate a structured investment brief with citations.""")
+Generate a structured investment brief with citations."""
 
     try:
-        response = await llm.ainvoke([system, human])
-        draft = response.content
-        # Ensure draft is safe for Windows console (replace unsupported chars)
+        content, tracking = await _invoke_llm_tracked(state, system, human, timeout=60)
+        draft = content
         if isinstance(draft, str):
             draft = draft.encode('utf-8', errors='replace').decode('utf-8')
     except asyncio.TimeoutError:
@@ -551,14 +622,7 @@ Based on the retrieved sources, here is a brief summary:
 {chr(10).join(f"- {rc.chunk.content[:200]}" for rc in chunks[:5])}
 
 Please try again."""
-    except UnicodeEncodeError:
-        # This is a Windows console encoding issue in logging, NOT an LLM failure
-        # The LLM response was actually received - re-get it safely
-        try:
-            response2 = await llm.ainvoke([system, human])
-            draft = response2.content.encode('utf-8', errors='replace').decode('utf-8')
-        except Exception:
-            draft = f"## Analysis for {state['ticker']}\n\n(Draft generation encountered encoding issues. Please retry.)"
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
     except Exception as e:
         err_msg = repr(e)[:200]
         print(f"[ANALYSIS] LLM call failed: {err_msg}")
@@ -568,10 +632,13 @@ Please try again."""
 
 Retrieved {len(chunks)} relevant chunks but could not synthesize them.
 """
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
 
     return {
         "analysis_draft": draft,
         "agent_hops": state.get("agent_hops", 0) + 1,
+        "total_tokens": tracking["total_tokens"],
+        "token_cost_usd": tracking["token_cost_usd"],
     }
 
 
@@ -732,15 +799,16 @@ async def critique_node(state: SignalScoutState) -> Dict[str, Any]:
     query = state["query"]
     context = "\n".join([c.chunk_excerpt for c in citations[:5]])
 
-    system = SystemMessage(content="""You are a quality evaluator for financial analysis reports.
-Score the report on three dimensions (each 0.0–1.0):
+    system = """You are a quality evaluator for financial analysis reports.
+Score the report on four dimensions (each 0.0–1.0):
 1. citation_coverage: Are major claims backed by [N] citations?
 2. factual_grounding: Do claims match the provided source excerpts?
 3. query_completeness: Does the brief actually answer the original query?
+4. context_recall: How much of the relevant source information is successfully captured in the report?
 
-Respond as JSON: {"citation_coverage": 0.X, "factual_grounding": 0.X, "query_completeness": 0.X, "overall": 0.X, "feedback": "..."}""")
+Respond as JSON: {"citation_coverage": 0.X, "factual_grounding": 0.X, "query_completeness": 0.X, "context_recall": 0.X, "overall": 0.X, "feedback": "..."}"""
 
-    human = HumanMessage(content=f"""Query: {query}
+    human = f"""Query: {query}
 
 BRIEF:
 {draft[:1500]}
@@ -748,12 +816,12 @@ BRIEF:
 SOURCE EXCERPTS:
 {context[:800]}
 
-Evaluate and score.""")
+Evaluate and score."""
 
     try:
-        response = await llm.ainvoke([system, human])
+        content, tracking = await _invoke_llm_tracked(state, system, human, timeout=30)
         import json
-        text = response.content.strip()
+        text = content.strip()
         if "```" in text:
             text = text.split("```")[1]
             if text.startswith("json"):
@@ -761,16 +829,19 @@ Evaluate and score.""")
         scores = json.loads(text.strip())
     except asyncio.TimeoutError:
         _slog(logger.warning, "[CRITIQUE] LLM timed out - using default scores")
-        scores = {"overall": 0.75, "feedback": "", "citation_coverage": 0.7, "factual_grounding": 0.75, "query_completeness": 0.8}
+        scores = {"overall": 0.75, "feedback": "", "citation_coverage": 0.7, "factual_grounding": 0.75, "query_completeness": 0.8, "context_recall": 0.75}
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
     except Exception as e:
         _slog(logger.warning, f"[CRITIQUE] Evaluation failed: {repr(e)[:200]} - using default scores")
-        scores = {"overall": 0.75, "feedback": "", "citation_coverage": 0.7, "factual_grounding": 0.75, "query_completeness": 0.8}
+        scores = {"overall": 0.75, "feedback": "", "citation_coverage": 0.7, "factual_grounding": 0.75, "query_completeness": 0.8, "context_recall": 0.75}
+        tracking = {"total_tokens": state.get("total_tokens", 0), "token_cost_usd": state.get("token_cost_usd", 0.0)}
 
     critique_score = float(scores.get("overall", 0.75))
     confidence = ConfidenceScores(
         faithfulness=float(scores.get("factual_grounding", 0.75)),
         answer_relevancy=float(scores.get("query_completeness", 0.75)),
         context_precision=float(scores.get("citation_coverage", 0.75)),
+        context_recall=float(scores.get("context_recall", 0.75)),
         overall=critique_score,
     )
 
@@ -780,6 +851,8 @@ Evaluate and score.""")
         "critique_feedback": scores.get("feedback"),
         "confidence": confidence,
         "agent_hops": state.get("agent_hops", 0) + 1,
+        "total_tokens": tracking["total_tokens"],
+        "token_cost_usd": tracking["token_cost_usd"],
     }
 
 
@@ -818,6 +891,8 @@ async def finalize_node(state: SignalScoutState) -> Dict[str, Any]:
         num_chunks_retrieved=len(state.get("retrieved_chunks", [])),
         agent_hops=state.get("agent_hops", 0),
         latency_ms=state.get("latency_ms", 0.0),
+        token_cost_usd=state.get("token_cost_usd", 0.0),
+        total_tokens=state.get("total_tokens", 0),
     )
 
     return {"final_brief": brief}
@@ -918,6 +993,7 @@ async def run_graph(
         "agent_hops": 0,
         "total_tokens": 0,
         "latency_ms": 0.0,
+        "token_cost_usd": 0.0,
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -957,6 +1033,7 @@ async def stream_graph(
         "agent_hops": 0,
         "total_tokens": 0,
         "latency_ms": 0.0,
+        "token_cost_usd": 0.0,
     }
 
     async for event in graph.astream_events(initial_state, version="v2"):

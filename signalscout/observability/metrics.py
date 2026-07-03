@@ -7,6 +7,12 @@ BRIEF_REQUESTS = Counter(
     labelnames=["ticker"],
 )
 
+BRIEF_FAILURES = Counter(
+    "signalscout_brief_failures_total",
+    "Total failed investment brief requests",
+    labelnames=["ticker"],
+)
+
 BRIEF_LATENCY = Histogram(
     "signalscout_brief_latency_seconds",
     "End-to-end brief generation latency",

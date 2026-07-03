@@ -1,7 +1,7 @@
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts"
 import { TextureCard, TextureCardContent } from "./ui/texture-card"
 import { AnimatedNumber } from "./ui/animated-number"
-import { ShieldCheck } from "lucide-react"
+import { ShieldCheck, Zap } from "lucide-react"
 
 const METRIC_COLORS = {
   faithfulness: "#d444ef",       // Pink/purple
@@ -10,7 +10,7 @@ const METRIC_COLORS = {
   context_precision: "#a78bfa",  // Lavender
 }
 
-export default function ConfidencePanel({ confidence }) {
+export default function ConfidencePanel({ confidence, latencyMs }) {
   if (!confidence) return null
 
   const metrics = [
@@ -125,6 +125,16 @@ export default function ConfidencePanel({ confidence }) {
             )
           })}
         </div>
+
+        {/* Latency request telemetry */}
+        {latencyMs !== undefined && (
+          <div className="flex items-center justify-between border-t border-white/5 pt-3.5 mt-2 text-xs text-neutral-400 font-medium">
+            <div className="flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-indigo-400" />
+              <span>Latency: <strong className="text-neutral-300 font-mono">{(latencyMs / 1000).toFixed(2)}s</strong></span>
+            </div>
+          </div>
+        )}
       </TextureCardContent>
     </TextureCard>
   )

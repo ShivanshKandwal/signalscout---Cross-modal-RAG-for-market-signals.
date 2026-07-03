@@ -122,8 +122,19 @@ class BriefORM(Base):
     agent_hops = Column(Integer, default=0)
     latency_ms = Column(Float, default=0.0)
     token_cost_usd = Column(Float, default=0.0)
+    total_tokens = Column(Integer, default=0)
     citations_json = Column("citations", JSON, default=list)
     contradictions_json = Column("contradictions", JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RequestLogORM(Base):
+    __tablename__ = "request_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ticker = Column(String(20), nullable=False, index=True)
+    status = Column(String(20), nullable=False) # "success" or "failed"
+    latency_ms = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

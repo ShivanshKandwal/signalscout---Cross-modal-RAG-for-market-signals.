@@ -4,30 +4,33 @@ export default function ShaderBackground() {
   return (
     <ShaderGradientCanvas
       style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: -2,
         pointerEvents: "none",
       }}
-      pixelDensity={1.2}
-      fov={45}
     >
       <ShaderGradient
         control="props"
-        color1="#000000"
-        color2="#ff0085"
-        color3="#d444ef"
+        type="waterPlane"
         animate="on"
-        cDistance={14}
-        cPolarAngle={105}
-        cAzimuthAngle={180}
-        cameraZoom={1.8}
-        type="plane"
+        color1="#ff0085"
+        color2="#d444ef"
+        color3="#000000"
+        bgColor1="#000000"
+        bgColor2="#000000"
+        brightness={1.0}
+        uDensity={1.2}
+        uFrequency={5.5}
+        uSpeed={0.12}
         grain="on"
-        grainBlending={0.08}
-        brightness={1.5}
-        dampingFactor={0.08}
+        cDistance={3.6}
+        cPolarAngle={90}
+        cAzimuthAngle={180}
+        cameraZoom={1.0}
       />
     </ShaderGradientCanvas>
   )

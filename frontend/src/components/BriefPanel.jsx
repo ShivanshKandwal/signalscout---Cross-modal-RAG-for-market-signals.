@@ -22,21 +22,21 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
 
   if (!brief) {
     return (
-      <div className="w-full flex flex-col gap-8">
+      <div className="w-full flex flex-col gap-6">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-neutral-950/40 backdrop-blur-md p-10 md:p-14 flex flex-col items-center text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-neutral-950/40 backdrop-blur-md p-6 md:p-10 flex flex-col items-center text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform translate-z-0 will-change-transform">
           {/* Decorative glowing gradient sphere in the background */}
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-[100px] pointer-events-none" />
           
-          <div className="mb-6 p-4 bg-pink-500/10 border border-pink-500/20 text-pink-400 rounded-2xl shadow-[0_0_25px_rgba(212,68,239,0.3)] animate-pulse">
-            <Sparkles className="w-10 h-10" />
+          <div className="mb-4 p-3 bg-pink-500/10 border border-pink-500/20 text-pink-400 rounded-2xl shadow-[0_0_20px_rgba(212,68,239,0.25)] animate-pulse">
+            <Sparkles className="w-8 h-8" />
           </div>
 
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-400 to-indigo-400 mb-6 uppercase font-title leading-tight">
+          <h2 className="text-2xl md:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-400 to-indigo-400 mb-4 uppercase font-title leading-tight">
             SignalScout Intelligence Engine
           </h2>
 
-          <p className="text-base text-neutral-400 max-w-2xl leading-relaxed mb-8">
+          <p className="text-base md:text-lg text-neutral-400 max-w-2xl leading-relaxed mb-6">
             A state-of-the-art multi-agent RAG pipeline that extracts, verifies, and synthesizes complex market signals across corporate transcripts, slides, and filings.
           </p>
 
@@ -50,10 +50,10 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
               <div className="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-[0_0_15px_rgba(212,68,239,0.1)]">
                 <Compass className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
+              <h4 className="text-lg font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Cross-Modal RAG
               </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed">
+              <p className="text-sm text-neutral-400 leading-relaxed">
                 Queries textual reports, presentation slides, and financial charts simultaneously to build a cohesive narrative.
               </p>
             </TextureCardContent>
@@ -64,10 +64,10 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
               <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
                 <ShieldAlert className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
+              <h4 className="text-lg font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Contradiction Check
               </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed">
+              <p className="text-sm text-neutral-400 leading-relaxed">
                 Automatically checks agent answers against source texts to identify and flag discrepancies or conflicting claims.
               </p>
             </TextureCardContent>
@@ -78,10 +78,10 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
               <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
                 <Link className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
+              <h4 className="text-lg font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Interactive Citations
               </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed">
+              <p className="text-sm text-neutral-400 leading-relaxed">
                 Provides clickable deep-linked source tags, letting you inspect the exact audio clip or paragraph behind every metric.
               </p>
             </TextureCardContent>
