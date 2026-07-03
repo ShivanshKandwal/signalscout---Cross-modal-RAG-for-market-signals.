@@ -36,9 +36,28 @@ def _get_model() -> SentenceTransformer:
 def embed_texts(texts: List[str]) -> List[List[float]]:
     """
     Embed a list of strings with BAAI/bge-m3.
-    Returns list of 1024-dim float vectors.
-    Automatically batches to settings.embedding_batch_size.
+    Uses Hugging Face Inference API (0MB RAM) if HF_TOKEN is configured.
+    Falls back to local SentenceTransformer if API fails.
     """
+    import os
+    import httpx
+    hf_token = os.environ.get("HF_TOKEN", "").strip()
+    if hf_token and not hf_token.startswith("your_"):
+        try:
+            logger.info("Using Hugging Face Inference API for embeddings (0MB RAM)...")
+            headers = {"Authorization": f"Bearer {hf_token}"}
+            api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{settings.hf_embedding_model}"
+            resp = httpx.post(
+                api_url,
+                headers=headers,
+                json={"inputs": texts, "options": {"wait_for_model": True}},
+                timeout=60.0
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.warning(f"HF Inference API failed: {e}. Falling back to local SentenceTransformer...")
+
     model = _get_model()
     embeddings = model.encode(
         texts,
