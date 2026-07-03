@@ -7,15 +7,16 @@ import ContradictionAlert from "./components/ContradictionAlert"
 import AgentStatusBar from "./components/AgentStatusBar"
 import { GridBeam } from "./components/ui/grid-beam"
 import ShaderBackground from "./components/ui/shader-background"
+import { Radio } from "lucide-react"
 
 const AGENT_STEPS = [
-  { id: "orchestrator", label: "Orchestrator", icon: "🎯" },
-  { id: "retrieval",    label: "Retrieval Agent", icon: "🔍" },
-  { id: "analysis",     label: "Analysis Agent", icon: "📊" },
-  { id: "citation",     label: "Citation Agent", icon: "📎" },
-  { id: "contradiction",label: "Contradiction Check", icon: "⚠️" },
-  { id: "critique",     label: "Critique Agent", icon: "🧠" },
-  { id: "finalize",     label: "Finalize", icon: "✅" },
+  { id: "orchestrator", label: "Orchestrator", icon: "Target" },
+  { id: "retrieval",    label: "Retrieval Agent", icon: "Search" },
+  { id: "analysis",     label: "Analysis Agent", icon: "BarChart3" },
+  { id: "citation",     label: "Citation Agent", icon: "Link2" },
+  { id: "contradiction",label: "Contradiction Check", icon: "AlertTriangle" },
+  { id: "critique",     label: "Critique Agent", icon: "Brain" },
+  { id: "finalize",     label: "Finalize", icon: "CheckCircle2" },
 ]
 
 export default function App() {
@@ -90,15 +91,15 @@ export default function App() {
       <header className="relative z-10 w-full border-b border-white/5 bg-neutral-950/40 backdrop-blur-md">
         <GridBeam rows={3} cols={8} strength={0.35} duration={6} className="w-full py-4 px-6 md:px-12">
           <div className="flex items-center justify-between z-20 relative w-full">
-            <div className="flex items-center gap-3">
-              <div className="text-xl px-2.5 py-1.5 bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-xl shadow-[0_0_15px_rgba(212,68,239,0.2)]">
-                📡
+            <div className="flex items-center gap-3.5">
+              <div className="p-2.5 bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-xl shadow-[0_0_15px_rgba(212,68,239,0.25)] flex items-center justify-center">
+                <Radio className="w-5 h-5 text-pink-400 animate-pulse" />
               </div>
               <div>
-                <h1 className="text-lg font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 via-pink-400 to-indigo-400">
+                <h1 className="text-xl md:text-2xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 via-pink-400 to-indigo-400 uppercase font-title">
                   SignalScout
                 </h1>
-                <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest">
+                <p className="text-[10px] md:text-xs text-neutral-400 font-extrabold uppercase tracking-widest font-title">
                   Cross-Modal RAG Market Analysis Platform
                 </p>
               </div>

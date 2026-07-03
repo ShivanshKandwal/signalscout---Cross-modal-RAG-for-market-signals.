@@ -19,9 +19,10 @@ export default function ShaderBackground() {
         color2="#ff0085"
         color3="#d444ef"
         animate="on"
-        cDistance={28}
-        cPolarAngle={115}
+        cDistance={14}
+        cPolarAngle={105}
         cAzimuthAngle={180}
+        cameraZoom={1.8}
         type="plane"
         grain="on"
         grainBlending={0.08}

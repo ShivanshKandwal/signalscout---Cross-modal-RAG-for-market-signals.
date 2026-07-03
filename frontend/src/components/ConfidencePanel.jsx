@@ -1,6 +1,7 @@
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts"
 import { TextureCard, TextureCardContent } from "./ui/texture-card"
 import { AnimatedNumber } from "./ui/animated-number"
+import { ShieldCheck } from "lucide-react"
 
 const METRIC_COLORS = {
   faithfulness: "#d444ef",       // Pink/purple
@@ -32,13 +33,13 @@ export default function ConfidencePanel({ confidence }) {
       <TextureCardContent className="flex flex-col p-5 gap-4">
         {/* Header with animated Overall Score */}
         <div className="flex items-center justify-between border-b border-white/5 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-pink-400">🎯</span>
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="text-pink-400 w-5 h-5" />
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-title">
               Confidence Score
             </span>
           </div>
-          <div className="text-xl font-bold font-mono text-pink-400 pl-2">
+          <div className="text-xl font-bold font-mono text-pink-400 pl-2 font-title">
             <AnimatedNumber
               value={Math.round(overall * 100)}
               format={(n) => `${n}%`}

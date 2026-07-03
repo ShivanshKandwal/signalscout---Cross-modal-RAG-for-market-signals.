@@ -1,18 +1,30 @@
 import { motion, AnimatePresence } from "framer-motion"
+import { Target, Search, BarChart3, Link2, AlertTriangle, Brain, CheckCircle2, Activity, Cpu } from "lucide-react"
+
+const ICON_MAP = {
+  Target: Target,
+  Search: Search,
+  BarChart3: BarChart3,
+  Link2: Link2,
+  AlertTriangle: AlertTriangle,
+  Brain: Brain,
+  CheckCircle2: CheckCircle2,
+}
 
 export default function AgentStatusBar({ steps, activeAgents, completedAgents }) {
   const activeStep = steps.find(s => activeAgents.includes(s.id))
   const isRunning = activeAgents.length > 0
+  const IconComponent = activeStep ? (ICON_MAP[activeStep.icon] || Cpu) : Cpu
 
   return (
     <div className="flex flex-col items-center justify-center py-4 w-full">
       {/* Floating Dynamic Island Container */}
       <motion.div
         layout
-        initial={{ borderRadius: 24, width: "160px" }}
+        initial={{ borderRadius: 24, width: "180px" }}
         animate={{
-          width: isRunning ? "280px" : "180px",
-          height: isRunning ? "auto" : "40px",
+          width: isRunning ? "300px" : "200px",
+          height: isRunning ? "auto" : "44px",
           borderRadius: 24,
         }}
         transition={{ type: "spring", stiffness: 180, damping: 20 }}
@@ -26,9 +38,9 @@ export default function AgentStatusBar({ steps, activeAgents, completedAgents })
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center gap-2 h-full text-xs font-semibold tracking-wide text-neutral-300 select-none py-2"
+              className="flex items-center gap-2.5 h-full text-sm font-bold tracking-wide text-neutral-300 select-none py-2 font-title"
             >
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
               <span>Pipeline Idle</span>
             </motion.div>
           ) : (
@@ -37,32 +49,31 @@ export default function AgentStatusBar({ steps, activeAgents, completedAgents })
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full py-3 flex flex-col items-center"
+              className="w-full py-3.5 flex flex-col items-center"
             >
               {/* Dynamic Island Header Indicator */}
-              <div className="flex items-center justify-between w-full border-b border-white/5 pb-2 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-pink-400 animate-pulse">
+              <div className="flex items-center justify-between w-full border-b border-white/5 pb-2 mb-2.5">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-pink-400 animate-pulse font-title">
                   Agent Active
                 </span>
-                <span className="text-[10px] text-neutral-400">
+                <span className="text-[10px] font-bold text-neutral-400 font-title">
                   {completedAgents.length + 1} of {steps.length}
                 </span>
               </div>
 
               {/* Dynamic Active Agent Display */}
-              <div className="flex items-center gap-3 w-full pl-2">
+              <div className="flex items-center gap-3.5 w-full pl-2">
                 <motion.div
                   animate={{ scale: [1, 1.15, 1] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="text-2xl"
                 >
-                  {activeStep?.icon || "🤖"}
+                  <IconComponent className="w-6 h-6 text-pink-400 filter drop-shadow-[0_0_8px_rgba(212,68,239,0.5)]" />
                 </motion.div>
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-bold text-neutral-200">
+                  <span className="text-base font-bold text-neutral-200 font-title">
                     {activeStep?.label || "Processing"}
                   </span>
-                  <span className="text-[10px] text-neutral-500">
+                  <span className="text-xs text-neutral-500">
                     Executing logic node...
                   </span>
                 </div>

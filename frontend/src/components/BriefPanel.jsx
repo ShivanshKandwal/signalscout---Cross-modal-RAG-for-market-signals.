@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown"
 import { TextureCard, TextureCardContent } from "./ui/texture-card"
+import { Sparkles, Compass, ShieldAlert, Link, FileText } from "lucide-react"
 
 export default function BriefPanel({ brief, loading, onCitationClick }) {
   if (loading && !brief) {
@@ -11,7 +12,7 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
             <span className="w-2.5 h-2.5 bg-pink-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
             <span className="w-2.5 h-2.5 bg-pink-500 rounded-full animate-bounce" />
           </div>
-          <p className="text-sm font-semibold text-neutral-400">
+          <p className="text-sm font-semibold text-neutral-400 font-title">
             Agents synthesizing market intelligence...
           </p>
         </TextureCardContent>
@@ -23,19 +24,19 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
     return (
       <div className="w-full flex flex-col gap-8">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-neutral-950/40 backdrop-blur-md p-8 md:p-12 flex flex-col items-center text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-neutral-950/40 backdrop-blur-md p-10 md:p-14 flex flex-col items-center text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           {/* Decorative glowing gradient sphere in the background */}
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-[100px] pointer-events-none" />
           
-          <div className="text-5xl mb-6 text-pink-500 filter drop-shadow-[0_0_20px_rgba(212,68,239,0.5)] animate-pulse">
-            📡
+          <div className="mb-6 p-4 bg-pink-500/10 border border-pink-500/20 text-pink-400 rounded-2xl shadow-[0_0_25px_rgba(212,68,239,0.3)] animate-pulse">
+            <Sparkles className="w-10 h-10" />
           </div>
 
-          <h2 className="text-2xl md:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-400 to-indigo-400 mb-4 uppercase">
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-400 to-indigo-400 mb-6 uppercase font-title leading-tight">
             SignalScout Intelligence Engine
           </h2>
 
-          <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed mb-8">
+          <p className="text-base text-neutral-400 max-w-2xl leading-relaxed mb-8">
             A state-of-the-art multi-agent RAG pipeline that extracts, verifies, and synthesizes complex market signals across corporate transcripts, slides, and filings.
           </p>
 
@@ -45,42 +46,42 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
         {/* Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <TextureCard className="flex-1">
-            <TextureCardContent className="p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 text-lg font-bold">
-                🔍
+            <TextureCardContent className="p-6 flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-[0_0_15px_rgba(212,68,239,0.1)]">
+                <Compass className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Cross-Modal RAG
               </h4>
-              <p className="text-xs text-neutral-500 leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 Queries textual reports, presentation slides, and financial charts simultaneously to build a cohesive narrative.
               </p>
             </TextureCardContent>
           </TextureCard>
 
           <TextureCard className="flex-1">
-            <TextureCardContent className="p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-lg font-bold">
-                ⚠️
+            <TextureCardContent className="p-6 flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                <ShieldAlert className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Contradiction Check
               </h4>
-              <p className="text-xs text-neutral-500 leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 Automatically checks agent answers against source texts to identify and flag discrepancies or conflicting claims.
               </p>
             </TextureCardContent>
           </TextureCard>
 
           <TextureCard className="flex-1">
-            <TextureCardContent className="p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-lg font-bold">
-                📎
+            <TextureCardContent className="p-6 flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                <Link className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-extrabold text-neutral-200 uppercase tracking-wider">
+              <h4 className="text-base font-bold text-neutral-200 uppercase tracking-wider font-title">
                 Interactive Citations
               </h4>
-              <p className="text-xs text-neutral-500 leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 Provides clickable deep-linked source tags, letting you inspect the exact audio clip or paragraph behind every metric.
               </p>
             </TextureCardContent>
@@ -154,9 +155,9 @@ export default function BriefPanel({ brief, loading, onCitationClick }) {
 
       {/* Card Header section */}
       <div className="flex items-center justify-between border-b border-white/5 px-6 py-4 bg-neutral-950/20">
-        <div className="flex items-center gap-2">
-          <span className="text-pink-400 text-lg">📊</span>
-          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+        <div className="flex items-center gap-2.5">
+          <FileText className="text-pink-400 w-5 h-5" />
+          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-title">
             Investment Brief — {brief.ticker}
           </span>
         </div>

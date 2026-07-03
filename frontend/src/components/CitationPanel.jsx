@@ -1,5 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { TextureCard, TextureCardContent } from "./ui/texture-card"
+import { Bookmark, Mic, FileText, Globe, BarChart2 } from "lucide-react"
+
+const MODALITY_ICONS = {
+  audio: Mic,
+  document: FileText,
+  news: Globe,
+  image: BarChart2,
+}
 
 export default function CitationPanel({ citations, activeCitation, onCitationSelect }) {
   if (!citations.length) return null
@@ -8,9 +16,9 @@ export default function CitationPanel({ citations, activeCitation, onCitationSel
     <TextureCard className="w-full sticky top-4">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span className="text-pink-400">📎</span>
-          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+        <div className="flex items-center gap-2.5">
+          <Bookmark className="text-pink-400 w-5 h-5" />
+          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-title">
             Source Citations ({citations.length})
           </span>
         </div>
@@ -19,6 +27,7 @@ export default function CitationPanel({ citations, activeCitation, onCitationSel
       <TextureCardContent className="p-4 flex flex-col gap-3.5 max-h-[75vh] overflow-y-auto">
         {citations.map((citation, i) => {
           const isActive = activeCitation === i
+          const ModalityIcon = MODALITY_ICONS[citation.modality] || FileText
           return (
             <div
               key={citation.id || i}
@@ -36,7 +45,7 @@ export default function CitationPanel({ citations, activeCitation, onCitationSel
                     [{i + 1}]
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                       citation.modality === "audio"
                         ? "bg-sky-500/10 border border-sky-500/30 text-sky-400"
                         : citation.modality === "document"
@@ -46,10 +55,7 @@ export default function CitationPanel({ citations, activeCitation, onCitationSel
                         : "bg-pink-500/10 border border-pink-500/30 text-pink-400"
                     }`}
                   >
-                    {citation.modality === "audio" && "🎙️"}
-                    {citation.modality === "document" && "📄"}
-                    {citation.modality === "news" && "📰"}
-                    {citation.modality === "image" && "📊"}
+                    <ModalityIcon className="w-3 h-3" />
                     {" "}{citation.modality}
                   </span>
                 </div>
