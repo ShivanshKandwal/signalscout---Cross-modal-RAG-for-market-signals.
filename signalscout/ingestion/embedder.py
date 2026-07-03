@@ -1,5 +1,5 @@
 """
-Embedding pipeline — wraps BAAI/bge-m3 via sentence-transformers.
+Embedding pipeline - wraps BAAI/bge-m3 via sentence-transformers.
 Handles batching, device detection, and pgvector INSERT.
 HF Task: Feature Extraction
 """
@@ -19,7 +19,7 @@ from signalscout.models.database import ChunkORM
 
 logger = logging.getLogger(__name__)
 
-# Module-level singleton — loaded once, reused across all ingestion calls
+# Module-level singleton - loaded once, reused across all ingestion calls
 _model: Optional[SentenceTransformer] = None
 
 

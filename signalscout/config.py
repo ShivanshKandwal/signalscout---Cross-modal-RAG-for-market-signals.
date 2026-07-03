@@ -1,5 +1,5 @@
 """
-SignalScout — centralized configuration via pydantic-settings.
+SignalScout - centralized configuration via pydantic-settings.
 All settings are loaded from environment variables or .env file.
 """
 from __future__ import annotations
@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     # ── External APIs ─────────────────────────────────────────────────────────
     news_api_key: str = ""
     openai_api_key: str = ""
+    gemini_api_key: str = ""
 
     # ── LangSmith ─────────────────────────────────────────────────────────────
     langsmith_api_key: str = ""
@@ -96,7 +97,7 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Cached singleton settings — import this everywhere."""
+    """Cached singleton settings - import this everywhere."""
     return Settings()
 
 

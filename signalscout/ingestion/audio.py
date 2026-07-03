@@ -1,5 +1,5 @@
 """
-Audio ingestion pipeline — earnings call transcription and chunking.
+Audio ingestion pipeline - earnings call transcription and chunking.
 Whisper ASR → pyannote diarization → speaker-turn chunks → Audio-Text-to-Text summary.
 HF Tasks: Automatic Speech Recognition, Audio-Text-to-Text
 """

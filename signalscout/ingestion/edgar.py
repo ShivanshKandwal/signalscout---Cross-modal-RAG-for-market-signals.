@@ -182,7 +182,7 @@ def chunk_text(
 def ingest_edgar(
     ticker: str,
     form_types: Optional[List[str]] = None,
-    max_filings: int = 3,
+    max_filings: int = 1,
 ) -> Iterator[Chunk]:
     """
     Full EDGAR ingestion pipeline for a ticker.

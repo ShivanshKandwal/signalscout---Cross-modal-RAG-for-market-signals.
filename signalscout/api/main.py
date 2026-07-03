@@ -1,5 +1,5 @@
 """
-FastAPI backend — streaming investment brief API.
+FastAPI backend - streaming investment brief API.
 """
 from __future__ import annotations
 
@@ -34,8 +34,14 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Startup: init database, enable pgvector extension."""
     logger.info("SignalScout API starting up...")
-    await init_db()
-    logger.info("Database initialized.")
+    try:
+        await init_db()
+        logger.info("Database initialized.")
+    except Exception as e:
+        logger.warning(
+            f"Database initialization failed (will use live data fallback): {e}\n"
+            "The API will still work using yfinance + web search for live market data."
+        )
     yield
     logger.info("SignalScout API shutting down.")
 
@@ -72,24 +78,32 @@ async def create_brief(
     if not request.stream:
         brief = await run_graph(request.query, request.ticker, db)
 
-        # Persist to DB
-        orm = BriefORM(
-            id=brief.id,
-            query=brief.query,
-            ticker=brief.ticker,
-            brief_markdown=brief.brief_markdown,
-            summary=brief.summary,
-            sentiment=brief.sentiment.value,
-            confidence_json=brief.confidence.model_dump(),
-            modalities_used=[m.value for m in brief.modalities_used],
-            num_chunks_retrieved=brief.num_chunks_retrieved,
-            agent_hops=brief.agent_hops,
-            latency_ms=brief.latency_ms,
-            citations_json=[c.model_dump(mode="json") for c in brief.citations],
-            contradictions_json=[c.model_dump(mode="json") for c in brief.contradictions],
-        )
-        db.add(orm)
-        await db.commit()
+        # Persist to DB (best-effort — skip if DB is unavailable)
+        try:
+            orm = BriefORM(
+                id=brief.id,
+                query=brief.query,
+                ticker=brief.ticker,
+                brief_markdown=brief.brief_markdown,
+                summary=brief.summary,
+                sentiment=brief.sentiment.value,
+                confidence_json=brief.confidence.model_dump(),
+                modalities_used=[m.value for m in brief.modalities_used],
+                num_chunks_retrieved=brief.num_chunks_retrieved,
+                agent_hops=brief.agent_hops,
+                latency_ms=brief.latency_ms,
+                citations_json=[c.model_dump(mode="json") for c in brief.citations],
+                contradictions_json=[c.model_dump(mode="json") for c in brief.contradictions],
+            )
+            db.add(orm)
+            await db.commit()
+            logger.info(f"Brief {brief.id} persisted to DB")
+        except Exception as db_err:
+            logger.warning(f"Could not persist brief to DB (running in live-data mode): {db_err}")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
 
         BRIEF_REQUESTS.labels(ticker=request.ticker).inc()
         BRIEF_LATENCY.labels(ticker=request.ticker).observe(brief.latency_ms / 1000)

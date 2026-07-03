@@ -1,5 +1,5 @@
 """
-Image pipeline — stock chart generation and VLM captioning.
+Image pipeline - stock chart generation and VLM captioning.
 yfinance OHLCV → mplfinance chart PNG → Idefics3 structured caption → chunk.
 HF Task: Image-Text-to-Text
 """
@@ -69,7 +69,7 @@ def generate_chart(
         data,
         type="candle",
         style="charles",
-        title=f"{ticker} — {period}",
+        title=f"{ticker} - {period}",
         ylabel="Price (USD)",
         volume=True,
         savefig=dict(fname=buf, dpi=100, bbox_inches="tight"),

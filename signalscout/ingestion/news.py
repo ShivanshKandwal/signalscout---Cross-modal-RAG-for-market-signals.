@@ -81,8 +81,9 @@ def fetch_news(ticker: str, company_name: Optional[str] = None, page_size: int =
     Returns raw article dicts.
     Requires NEWS_API_KEY in .env.
     """
-    if not settings.news_api_key:
-        logger.warning("NEWS_API_KEY not set — skipping news fetch.")
+    api_key = settings.news_api_key
+    if not api_key or api_key.startswith("your_"):
+        logger.warning("NEWS_API_KEY is not configured - skipping news fetch.")
         return []
 
     query = company_name or ticker
@@ -92,15 +93,26 @@ def fetch_news(ticker: str, company_name: Optional[str] = None, page_size: int =
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": page_size,
-        "apiKey": settings.news_api_key,
+        "apiKey": api_key,
     }
-    resp = httpx.get(url, params=params, timeout=30)
-    resp.raise_for_status()
-    data = resp.json()
-
-    articles = data.get("articles", [])
-    logger.info(f"[NEWS] Fetched {len(articles)} articles for {ticker}")
-    return articles
+    try:
+        resp = httpx.get(url, params=params, timeout=30)
+        if resp.status_code == 401:
+            logger.warning("NewsAPI key returned 401 Unauthorized. Skipping news ingestion.")
+            return []
+        resp.raise_for_status()
+        data = resp.json()
+        articles = data.get("articles", [])
+        logger.info(f"[NEWS] Fetched {len(articles)} articles for {ticker}")
+        return articles
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            logger.warning("NewsAPI key returned 401 Unauthorized. Skipping news ingestion.")
+            return []
+        raise e
+    except Exception as e:
+        logger.warning(f"Failed to fetch news from NewsAPI: {e}. Skipping.")
+        return []
 
 
 # ── Summarize ─────────────────────────────────────────────────────────────────

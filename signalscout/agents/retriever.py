@@ -55,6 +55,9 @@ class BM25Index:
 
     def build(self, chunks: List[Tuple[UUID, str]]) -> None:
         """Build the BM25 index from (chunk_id, content) tuples."""
+        if not chunks:
+            logger.warning(f"[BM25] No chunks provided to build index for {self.ticker}")
+            return
         self.chunk_ids = [c[0] for c in chunks]
         self.corpus = [c[1] for c in chunks]
         tokenized = [doc.lower().split() for doc in self.corpus]

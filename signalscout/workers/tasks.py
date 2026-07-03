@@ -226,7 +226,7 @@ def check_embedding_drift():
                 EMBEDDING_DRIFT.labels(ticker=ticker).set(drift)
 
                 if flagged:
-                    logger.warning(f"[DRIFT] {ticker}: drift={drift:.3f} — flagged for re-indexing")
+                    logger.warning(f"[DRIFT] {ticker}: drift={drift:.3f} - flagged for re-indexing")
                 results.append({"ticker": ticker, "drift": drift, "flagged": flagged})
 
             await db.commit()

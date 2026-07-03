@@ -76,10 +76,20 @@ async def _ingest_charts_for_tickers(tickers: list[str]):
 async def _rebuild_bm25():
     await init_db()
     console.print("[cyan]🔍 Rebuilding BM25 indexes...[/cyan]")
+    from sqlalchemy import select, func
+    from signalscout.models.database import ChunkORM
     async with AsyncSessionLocal() as db:
         for ticker in settings.watchlist_tickers:
-            await build_bm25_index(ticker, db)
-            console.print(f"  [green]✓ {ticker} index built[/green]")
+            # Check if we have chunks for this ticker
+            count_stmt = select(func.count(ChunkORM.id)).where(ChunkORM.ticker == ticker.upper())
+            count_res = await db.execute(count_stmt)
+            count = count_res.scalar()
+            
+            if count and count > 0:
+                await build_bm25_index(ticker, db)
+                console.print(f"  [green]✓ {ticker} index built ({count} chunks)[/green]")
+            else:
+                console.print(f"  [yellow]⚠ {ticker} skipped (no chunks in database)[/yellow]")
 
 
 def _print_summary(results: list[tuple]):
