@@ -461,5 +461,39 @@ async def ingest_chart(
 # ── Health ────────────────────────────────────────────────────────────────────
 
 @app.get("/health", tags=["System"])
-async def health():
-    return {"status": "ok", "version": "0.1.0"}
+async def health(db: AsyncSession = Depends(get_db)):
+    diagnostics = {}
+    
+    # 1. Test DB
+    try:
+        await db.execute(text("SELECT 1"))
+        diagnostics["database"] = "ok"
+    except Exception as e:
+        diagnostics["database"] = f"error: {str(e)}"
+
+    # 2. Test LLM
+    try:
+        from signalscout.agents.graph import _get_llm
+        llm = _get_llm(timeout=10)
+        from langchain_core.messages import HumanMessage
+        resp = await llm.ainvoke([HumanMessage(content="Ping")])
+        diagnostics["llm"] = f"ok ({str(resp.content)[:20].strip()})"
+    except Exception as e:
+        diagnostics["llm"] = f"error: {str(e)}"
+
+    # 3. Test Hugging Face Inference API
+    try:
+        from signalscout.ingestion.embedder import embed_texts
+        # Just embed a tiny query to test connection
+        emb = embed_texts(["Test"])
+        diagnostics["huggingface"] = f"ok (dim={len(emb[0]) if emb else 0})"
+    except Exception as e:
+        diagnostics["huggingface"] = f"error: {str(e)}"
+
+    overall_ok = all(isinstance(v, str) and v.startswith("ok") for v in diagnostics.values())
+    
+    return {
+        "status": "ok" if overall_ok else "degraded",
+        "diagnostics": diagnostics,
+        "version": "0.1.0"
+    }
