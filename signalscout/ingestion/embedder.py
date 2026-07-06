@@ -41,7 +41,7 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
     """
     import os
     import httpx
-    hf_token = os.environ.get("HF_TOKEN", "").strip()
+    hf_token = settings.hf_token.strip()
     if hf_token and not hf_token.startswith("your_"):
         try:
             logger.info("Using Hugging Face Inference API for embeddings (0MB RAM)...")
