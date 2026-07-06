@@ -1,26 +1,27 @@
 """
 Embedding pipeline - wraps BAAI/bge-m3 via sentence-transformers.
 Handles batching, device detection, and pgvector INSERT.
-HF Task: Feature Extraction
 """
 from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import List, Optional
 
 import numpy as np
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from signalscout.config import settings
 from signalscout.models import Chunk
 from signalscout.models.database import ChunkORM
 
 logger = logging.getLogger(__name__)
 
-# Module-level singleton - loaded once, reused across all ingestion calls
-_model: Optional[SentenceTransformer] = None
+_model: Optional["SentenceTransformer"] = None
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model():
     global _model
     if _model is None:
         from sentence_transformers import SentenceTransformer
@@ -34,65 +35,81 @@ def _get_model() -> SentenceTransformer:
 
 
 def embed_texts(texts: List[str]) -> List[List[float]]:
-    """
-    Embed a list of strings with BAAI/bge-m3.
-    Uses Hugging Face Inference API (0MB RAM) if HF_TOKEN is configured.
-    Falls back to local SentenceTransformer if API fails.
-    """
     import os
-    import httpx
+    import numpy as np
+    from huggingface_hub import InferenceClient
+
     hf_token = settings.hf_token.strip()
+    app_env = getattr(settings, "app_env", os.environ.get("APP_ENV", "development")).lower()
+
     if hf_token and not hf_token.startswith("your_"):
-        try:
-            logger.info("Using Hugging Face Inference API for embeddings (0MB RAM)...")
-            headers = {"Authorization": f"Bearer {hf_token}"}
-            api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{settings.hf_embedding_model}"
-            resp = httpx.post(
-                api_url,
-                headers=headers,
-                json={"inputs": texts, "options": {"wait_for_model": True}},
-                timeout=60.0
-            )
-            resp.raise_for_status()
-            return resp.json()
-        except Exception as e:
-            logger.error(f"HF Inference API failed: {e}")
-            if os.environ.get("APP_ENV") == "production":
-                raise RuntimeError(
-                    "Embedding API is temporarily unavailable. Local fallback disabled to prevent OOM crash."
-                ) from e
-            logger.warning("Falling back to local SentenceTransformer...")
+        for attempt in range(3):
+            try:
+                logger.info(f"HF InferenceClient attempt {attempt + 1}/3...")
+                client = InferenceClient(
+                    provider="hf-inference",
+                    api_key=hf_token,
+                )
+                result = client.feature_extraction(
+                    texts,
+                    model=settings.hf_embedding_model,
+                )
+                arr = np.array(result)
+                if arr.ndim == 3:
+                    arr = arr.mean(axis=1)
+                logger.info(f"HF InferenceClient succeeded. Shape: {arr.shape}")
+                return arr.tolist()
+
+            except Exception as e:
+                logger.error(f"HF attempt {attempt + 1} failed: {e}")
+                if attempt < 2:
+                    import time
+                    time.sleep(10 * (attempt + 1))
+                else:
+                    if app_env == "production":
+                        raise RuntimeError(
+                            "HF Inference unavailable after 3 attempts."
+                        ) from e
+                    logger.warning("Falling back to local SentenceTransformer...")
+
+    # ── LOCAL DEV FALLBACK ─────────────────────────────────────────────
+    # Everything below this line never executes on Render in production
+    # because either:
+    # (a) HF API succeeded and we already returned above, or
+    # (b) HF API failed in production and we already raised above
+    #
+    # On local dev: HF token missing/failing → falls through to here
+    if app_env == "production":
+        raise RuntimeError("HF API failed in production — no local fallback.")
+
+    try:
+        from sentence_transformers import SentenceTransformer  # lazy import — never loads torch on Render
+    except ImportError:
+        raise RuntimeError("sentence_transformers not installed and HF API unavailable.")
 
     model = _get_model()
     embeddings = model.encode(
         texts,
         batch_size=settings.embedding_batch_size,
         show_progress_bar=len(texts) > 100,
-        normalize_embeddings=True,   # cosine similarity → dot product
+        normalize_embeddings=True,
         convert_to_numpy=True,
     )
     return embeddings.tolist()
 
 
 def embed_query(query: str) -> List[float]:
-    """Embed a single query string for retrieval."""
-    # BGE-M3 benefits from the instruction prefix for retrieval queries
     prefixed = f"Represent this sentence for searching relevant passages: {query}"
     return embed_texts([prefixed])[0]
 
 
 async def store_chunks(chunks: List[Chunk], db: AsyncSession) -> int:
-    """
-    Embed chunks in batch and persist to pgvector.
-    Returns number of successfully stored chunks.
-    """
     if not chunks:
         return 0
 
     texts = [c.content for c in chunks]
     logger.info(f"Embedding {len(texts)} chunks...")
 
-    # Run CPU-bound embedding in thread pool to not block event loop
     loop = asyncio.get_event_loop()
     embeddings = await loop.run_in_executor(None, embed_texts, texts)
 

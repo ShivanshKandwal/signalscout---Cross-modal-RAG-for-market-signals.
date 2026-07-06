@@ -462,20 +462,36 @@ Given a user query about a stock ticker, extract:
 2. Time range preference (e.g., last quarter, last year, recent)
 3. Modality preference (audio = management statements, document = SEC filings, news = market news, image = chart patterns)
 
-Respond as JSON: {"intent": "...", "time_range": "...", "preferred_modalities": [...], "retrieval_instructions": "..."}"""
+Respond with ONLY a single-line JSON object, no newlines inside strings, no markdown:
+{"intent": "...", "time_range": "...", "preferred_modalities": [...], "retrieval_instructions": "..."}"""
 
     human = f"Ticker: {state['ticker']}\nQuery: {state['query']}"
 
     try:
         content, tracking = await _invoke_llm_tracked(state, system, human, timeout=30)
-        import json
+        import json, re
         text = content.strip()
-        # Strip markdown code fences if present
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        parsed = json.loads(text.strip())
+
+        # Strategy 1: extract from code fences
+        fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if fence_match:
+            raw = fence_match.group(1)
+        else:
+            # Strategy 2: find first {...} block
+            json_match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+            if json_match:
+                raw = json_match.group()
+            else:
+                raise ValueError(f"No JSON object found in orchestrator response: {text[:200]}")
+
+        # Strategy 3: sanitize control characters
+        raw = re.sub(r'[\x00-\x1f\x7f]', lambda m: {
+            '\n': '\\n',
+            '\r': '\\r',
+            '\t': '\\t',
+        }.get(m.group(), ''), raw)
+
+        parsed = json.loads(raw)
     except asyncio.TimeoutError:
         _slog(logger.warning, "[ORCHESTRATOR] LLM timed out. Using defaults.")
         parsed = {}
@@ -784,13 +800,6 @@ async def contradiction_node(state: SignalScoutState) -> Dict[str, Any]:
 
 
 async def critique_node(state: SignalScoutState) -> Dict[str, Any]:
-    """
-    Self-evaluation agent. Scores the draft brief for:
-    - Citation coverage (are claims cited?)
-    - Factual grounding (does it match retrieved context?)
-    - Completeness (does it address the query?)
-    Returns a critique_score and feedback for retry loop.
-    """
     logger.info("[CRITIQUE] Evaluating draft")
     llm = _get_llm(timeout=30)
 
@@ -806,7 +815,8 @@ Score the report on four dimensions (each 0.0–1.0):
 3. query_completeness: Does the brief actually answer the original query?
 4. context_recall: How much of the relevant source information is successfully captured in the report?
 
-Respond as JSON: {"citation_coverage": 0.X, "factual_grounding": 0.X, "query_completeness": 0.X, "context_recall": 0.X, "overall": 0.X, "feedback": "..."}"""
+Respond with ONLY a single-line JSON object, no newlines inside strings, no markdown:
+{"citation_coverage": 0.X, "factual_grounding": 0.X, "query_completeness": 0.X, "context_recall": 0.X, "overall": 0.X, "feedback": "one line only"}"""
 
     human = f"""Query: {query}
 
@@ -820,13 +830,30 @@ Evaluate and score."""
 
     try:
         content, tracking = await _invoke_llm_tracked(state, system, human, timeout=30)
-        import json
+        import json, re
         text = content.strip()
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        scores = json.loads(text.strip())
+
+        # Strategy 1: extract from code fences
+        fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if fence_match:
+            raw = fence_match.group(1)
+        else:
+            # Strategy 2: find first {...} block
+            json_match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+            if json_match:
+                raw = json_match.group()
+            else:
+                raise ValueError(f"No JSON object found in critique response: {text[:200]}")
+
+        # Strategy 3: sanitize control characters inside strings
+        raw = re.sub(r'[\x00-\x1f\x7f]', lambda m: {
+            '\n': '\\n',
+            '\r': '\\r',
+            '\t': '\\t',
+        }.get(m.group(), ''), raw)
+
+        scores = json.loads(raw)
+
     except asyncio.TimeoutError:
         _slog(logger.warning, "[CRITIQUE] LLM timed out - using default scores")
         scores = {"overall": 0.75, "feedback": "", "citation_coverage": 0.7, "factual_grounding": 0.75, "query_completeness": 0.8, "context_recall": 0.75}
