@@ -45,16 +45,23 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: init database, enable pgvector extension."""
+    """Startup: init database asynchronously to prevent port binding blocks."""
     logger.info("SignalScout API starting up...")
-    try:
-        await init_db()
-        logger.info("Database initialized.")
-    except Exception as e:
-        logger.warning(
-            f"Database initialization failed (will use live data fallback): {e}\n"
-            "The API will still work using yfinance + web search for live market data."
-        )
+    
+    # Run DB init in the background so Uvicorn can open the port instantly
+    import asyncio
+    async def _init_in_background():
+        try:
+            logger.info("Initializing database in background...")
+            await init_db()
+            logger.info("Database initialized successfully.")
+        except Exception as e:
+            logger.warning(
+                f"Database initialization failed (will use live data fallback): {e}\n"
+                "The API will still work using yfinance + web search for live market data."
+            )
+            
+    asyncio.create_task(_init_in_background())
     yield
     logger.info("SignalScout API shutting down.")
 
