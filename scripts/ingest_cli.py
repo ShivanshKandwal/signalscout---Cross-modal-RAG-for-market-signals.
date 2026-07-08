@@ -163,6 +163,68 @@ def bm25():
     console.print("[green]✓ BM25 indexes rebuilt[/green]")
 
 
+@app.command()
+def pdf(
+    path: str = typer.Option(..., "--path", "-p", help="Path to local PDF file"),
+    ticker: str = typer.Option(..., "--ticker", "-t", help="Stock ticker to associate the document with"),
+):
+    """Ingest a local PDF file into the database."""
+    async def _ingest():
+        import pdfplumber
+        from datetime import date
+        from uuid import uuid4
+        from signalscout.ingestion.edgar import parse_htm_to_sections, chunk_text
+        from signalscout.models import Chunk, ChunkMetadata, Modality
+        
+        await init_db()
+        
+        pdf_path = Path(path)
+        if not pdf_path.exists():
+            console.print(f"[red]Error: File {path} does not exist[/red]")
+            return
+            
+        console.print(f"[cyan]Reading PDF: {pdf_path.name}...[/cyan]")
+        pdf_text_list = []
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                txt = page.extract_text()
+                if txt:
+                    pdf_text_list.append(txt)
+        full_text = "\n".join(pdf_text_list)
+        
+        console.print(f"[cyan]Parsing sections and chunking...[/cyan]")
+        sections = parse_htm_to_sections(full_text)
+        chunks_to_store = []
+        for section_name, section_text in sections:
+            text_chunks = chunk_text(section_text)
+            for chunk_str in text_chunks:
+                meta = ChunkMetadata(
+                    ticker=ticker.upper(),
+                    modality=Modality.DOCUMENT,
+                    source_url=f"local://{pdf_path.name}",
+                    filed_date=date.today(),
+                    extra={"section_name": section_name}
+                )
+                chunks_to_store.append(Chunk(
+                    id=uuid4(),
+                    content=chunk_str,
+                    metadata=meta
+                ))
+                
+        console.print(f"[cyan]Generating embeddings and storing {len(chunks_to_store)} chunks...[/cyan]")
+        async with AsyncSessionLocal() as db:
+            stored = await store_chunks(chunks_to_store, db)
+            console.print(f"[green]✓ {stored} chunks stored in database[/green]")
+            
+        # Rebuild BM25 for this ticker
+        console.print(f"[cyan]Rebuilding BM25 index for {ticker}...[/cyan]")
+        async with AsyncSessionLocal() as db:
+            await build_bm25_index(ticker, db)
+            console.print(f"[green]✓ BM25 index rebuilt[/green]")
+
+    asyncio.run(_ingest())
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app()
