@@ -23,6 +23,38 @@ News (BART + MNLI) ───────┘                        RAGAS Eval + 
 
 ---
 
+## UI Console & Interactive Demo
+
+SignalScout features a modern, dark-themed, glassmorphic research console designed for real-time market signal analysis.
+
+### 1. Multi-Agent Research Console
+* **Asset Ticker Selection**: A sleek dashboard grid to switch between active targets (e.g., Google, Apple, Nvidia, Microsoft).
+* **Research Query Editor**: A multi-line natural language prompt bar equipped with inline modality toggles (supporting document ingestion, audio uploads, and stock charts).
+* **Live Pipeline Standby**: Traces execution in real-time across your agent graph nodes (**Orchestrator** → **Retrieval Agent** → **Analysis Agent** → **Citation Agent** → **Contradiction Check** → **Critique Agent** → **Finalize**).
+
+### 2. Live System Analytics Header
+A persistent real-time performance banner tracking your local LLMOps metrics:
+* **P50 / P95 Latency**: Computes response time distribution over successful runs.
+* **Failure Rate**: Displays error/success percentage metrics dynamically.
+* **Average Speed**: Shows token generation rate (e.g., `7603.3 t/s` for cached/local runs).
+* **Total Tokens & Runs**: Accumulates operational scope.
+
+### 3. Structured Brief Panel
+* **Interactive Markdown Document**: Generates parsed briefs divided into Executive Summary, Key Findings, Risk Factors, Management Sentiment, and Market Signal sections.
+* **Inline Citation Tags**: Every claim is marked with numerical hover citations (e.g., `[1]`, `[2]`) linked directly to the underlying raw database source chunk.
+
+### 4. Radar Confidence Metrics
+Evaluates RAG generation quality on the fly using standard RAGAS criteria:
+* **Radar Graph**: Visually displays overlap between **Faithfulness**, **Relevancy**, **Recall**, and **Precision**.
+* **Progress Bars**: Detailed breakdown of accuracy parameters (e.g., `Recall: 80%`).
+
+### 5. Signal Strength Gauge
+* **Radial Dial**: Dynamic needle visualization grading overall sentiment (e.g., **NEUTRAL**, **BULLISH**, **BEARISH**).
+* **Confidence Overlay**: Displays aggregate confidence scores (e.g., `82% confidence`).
+* **Source Citations Panel**: Lists the matched source document segments with percentage match weights.
+
+---
+
 ## Quick Start
 
 ### 1. Prerequisites
@@ -141,6 +173,58 @@ Scheduled jobs:
 
 ---
 
+## Desktop Application Packaging (Tauri)
+
+You can package SignalScout as a fully self-contained local desktop application with its own custom installer icon, running the Python server locally in the background as a Native Sidecar.
+
+### 1. Prerequisites (Windows)
+1. **Rust Compiler**: Install from [rustup.rs](https://rustup.rs/).
+2. **Visual Studio C++ Build Tools**: 
+   * Open the Visual Studio Installer and modify your Visual Studio Build Tools installation.
+   * Under the **Workloads** tab, select **Desktop development with C++**.
+   * Under the details panel on the right, ensure that **MSVC v143 build tools** and **Windows 11/10 SDK** are checked, then apply the changes.
+
+### 2. Prepare the Backend Sidecar
+Compile the Python FastAPI server into a single-file executable using PyInstaller:
+```bash
+# Install packaging tool
+pip install pyinstaller
+
+# Compile the backend
+pyinstaller --onefile --clean --name signalscout-backend signalscout/api/main.py
+
+# Create binaries folder in Tauri project and copy the executable
+# (Rename with target-triple suffix to allow Tauri discovery)
+mkdir frontend/src-tauri/binaries
+copy dist/signalscout-backend.exe frontend/src-tauri/binaries/signalscout-backend-x86_64-pc-windows-msvc.exe
+```
+
+### 3. Compile the Desktop App Installer
+Navigate to the frontend folder, generate the icons, and run the Tauri release compiler:
+```bash
+cd frontend
+
+# Generate all app shortcuts and installer icons from our logo
+npx tauri icon logo.png
+
+# Compile the NSIS Setup Installer (.exe)
+npx tauri build
+```
+Once the build completes, your compiled setup installer will be saved at:
+📂 `frontend/src-tauri/target/release/bundle/nsis/signalscout_0.1.0_x64-setup.exe`
+
+---
+
+## Local PDF Ingestion CLI
+
+For handling large, multi-megabyte PDF documents locally without browser timeout limits, use the CLI ingestion tool:
+```bash
+python scripts/ingest_cli.py pdf --file "C:/path/to/your/document.pdf" --ticker GOOG
+```
+This chunks and embeds the document layout directly into the vector database.
+
+---
+
 ## Observability
 
 - **Prometheus metrics**: `http://localhost:9090`
@@ -152,4 +236,4 @@ Scheduled jobs:
 
 ## Resume Impact
 
-> "Built a 5-agent LangGraph system processing 3 modalities (audio, PDF, image) with hybrid BM25 + dense RAG retrieval. Achieved 0.83 RAGAS faithfulness on a 50-sample financial QA eval set. Detects cross-modal contradictions via NLI (DeBERTa). Full LLMOps instrumentation with LangSmith traces and Grafana dashboards."
+> "Built a 5-agent LangGraph system processing 3 modalities (audio, PDF, image) with hybrid BM25 + dense RAG retrieval. Achieved 0.83 RAGAS faithfulness on a 50-sample financial QA eval set. Detects cross-modal contradictions via NLI (DeBERTa). Full LLMOps instrumentation with LangSmith traces and Grafana dashboards. Packaged and compiled the system as a self-contained Tauri desktop application running a PyInstaller-compiled Python background sidecar."
