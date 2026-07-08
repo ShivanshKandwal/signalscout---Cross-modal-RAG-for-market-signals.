@@ -40,30 +40,21 @@ dependencies = [
     "llama-index-vector-stores-postgres>=0.3.0",
 
     # HuggingFace
-    "transformers>=4.47.0",
     "huggingface-hub>=0.27.0",
     "datasets>=3.2.0",
-    "accelerate>=1.2.0",
     "tokenizers>=0.21.0",
-    "sentence-transformers>=3.3.1",
-    "optimum>=1.23.0",
 
     # Audio
-    "openai-whisper>=20240930",
     "soundfile>=0.12.1",
     "librosa>=0.10.2",
-    "pyannote.audio>=3.3.2",
 
     # Document processing
-    "docling>=2.14.0",
-    "unstructured[pdf]>=0.16.11",
     "pymupdf>=1.25.1",
     "pillow>=11.1.0",
     "pdfplumber>=0.11.0",
 
     # Retrieval
     "rank-bm25>=0.2.2",
-    "faiss-cpu>=1.9.0",
 
     # Eval
     "ragas>=0.2.6",
@@ -106,6 +97,17 @@ dev = [
     "ruff>=0.8.6",
     "mypy>=1.14.0",
     "pre-commit>=4.0.1",
+]
+local = [
+    "transformers>=4.47.0",
+    "accelerate>=1.2.0",
+    "sentence-transformers>=3.3.1",
+    "optimum>=1.23.0",
+    "openai-whisper>=20240930",
+    "pyannote.audio>=3.3.2",
+    "docling>=2.14.0",
+    "unstructured[pdf]>=0.16.11",
+    "faiss-cpu>=1.9.0",
 ]
 
 [tool.hatch.build.targets.wheel]
