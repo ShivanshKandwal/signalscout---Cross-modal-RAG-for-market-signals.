@@ -1,6 +1,8 @@
 # SignalScout 📡
 **Multimodal Market Intelligence Agent with LLMOps**
 
+![Demo](./images_RAG/demo.gif)
+
 A production-grade, 5-agent LangGraph RAG system that ingests earnings call audio (Whisper ASR), SEC filings (pgvector), stock charts (Idefics3), and financial news — synthesizes cross-modal signals, detects management vs. filing contradictions via NLI, and produces structured investment briefs with cited evidence, confidence scores, and a full LLMOps observability layer.
 
 ---
@@ -28,11 +30,17 @@ News (BART + MNLI) ───────┘                        RAGAS Eval + 
 SignalScout features a modern, dark-themed, glassmorphic research console designed for real-time market signal analysis.
 
 ### 1. Multi-Agent Research Console
+
+![RAG Architecture](./images_RAG/RAG%20with%20Multimodal.png)
+
 * **Asset Ticker Selection**: A sleek dashboard grid to switch between active targets (e.g., Google, Apple, Nvidia, Microsoft).
 * **Research Query Editor**: A multi-line natural language prompt bar equipped with inline modality toggles (supporting document ingestion, audio uploads, and stock charts).
 * **Live Pipeline Standby**: Traces execution in real-time across your agent graph nodes (**Orchestrator** → **Retrieval Agent** → **Analysis Agent** → **Citation Agent** → **Contradiction Check** → **Critique Agent** → **Finalize**).
 
 ### 2. Live System Analytics Header
+
+![RAG Output](./images_RAG/RAG%20with%20Multimodal%20output%20.png)
+
 A persistent real-time performance banner tracking your local LLMOps metrics:
 * **P50 / P95 Latency**: Computes response time distribution over successful runs.
 * **Failure Rate**: Displays error/success percentage metrics dynamically.
@@ -40,10 +48,16 @@ A persistent real-time performance banner tracking your local LLMOps metrics:
 * **Total Tokens & Runs**: Accumulates operational scope.
 
 ### 3. Structured Brief Panel
+
+![RAG Output Graph](./images_RAG/RAG%20with%20Multimodal%20,%20output%20graph.png)
+
 * **Interactive Markdown Document**: Generates parsed briefs divided into Executive Summary, Key Findings, Risk Factors, Management Sentiment, and Market Signal sections.
 * **Inline Citation Tags**: Every claim is marked with numerical hover citations (e.g., `[1]`, `[2]`) linked directly to the underlying raw database source chunk.
 
 ### 4. Radar Confidence Metrics
+
+![Demo](./images_RAG/demo.gif)
+
 Evaluates RAG generation quality on the fly using standard RAGAS criteria:
 * **Radar Graph**: Visually displays overlap between **Faithfulness**, **Relevancy**, **Recall**, and **Precision**.
 * **Progress Bars**: Detailed breakdown of accuracy parameters (e.g., `Recall: 80%`).
