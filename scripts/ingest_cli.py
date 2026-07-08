@@ -37,11 +37,11 @@ async def _ingest_edgar_for_tickers(tickers: list[str]):
     results = []
     async with AsyncSessionLocal() as db:
         for ticker in tickers:
-            console.print(f"[cyan]📄 Ingesting EDGAR filings for {ticker}...[/cyan]")
+            console.print(f"[cyan]Ingesting EDGAR filings for {ticker}...[/cyan]")
             chunks = list(ingest_edgar(ticker))
             stored = await store_chunks(chunks, db)
             results.append((ticker, "document", stored))
-            console.print(f"  [green]✓ {stored} chunks stored[/green]")
+            console.print(f"  [green][OK] {stored} chunks stored[/green]")
     return results
 
 
@@ -51,11 +51,11 @@ async def _ingest_news_for_tickers(tickers: list[str]):
     results = []
     async with AsyncSessionLocal() as db:
         for ticker in tickers:
-            console.print(f"[cyan]📰 Ingesting news for {ticker}...[/cyan]")
+            console.print(f"[cyan]Ingesting news for {ticker}...[/cyan]")
             chunks = list(ingest_news(ticker))
             stored = await store_chunks(chunks, db)
             results.append((ticker, "news", stored))
-            console.print(f"  [green]✓ {stored} chunks stored[/green]")
+            console.print(f"  [green][OK] {stored} chunks stored[/green]")
     return results
 
 
@@ -65,17 +65,17 @@ async def _ingest_charts_for_tickers(tickers: list[str]):
     results = []
     async with AsyncSessionLocal() as db:
         for ticker in tickers:
-            console.print(f"[cyan]📊 Generating charts for {ticker}...[/cyan]")
+            console.print(f"[cyan]Generating charts for {ticker}...[/cyan]")
             chunks = list(ingest_charts(ticker))
             stored = await store_chunks(chunks, db)
             results.append((ticker, "image", stored))
-            console.print(f"  [green]✓ {stored} chunks stored[/green]")
+            console.print(f"  [green][OK] {stored} chunks stored[/green]")
     return results
 
 
 async def _rebuild_bm25():
     await init_db()
-    console.print("[cyan]🔍 Rebuilding BM25 indexes...[/cyan]")
+    console.print("[cyan]Rebuilding BM25 indexes...[/cyan]")
     from sqlalchemy import select, func
     from signalscout.models.database import ChunkORM
     async with AsyncSessionLocal() as db:
@@ -87,9 +87,9 @@ async def _rebuild_bm25():
             
             if count and count > 0:
                 await build_bm25_index(ticker, db)
-                console.print(f"  [green]✓ {ticker} index built ({count} chunks)[/green]")
+                console.print(f"  [green][OK] {ticker} index built ({count} chunks)[/green]")
             else:
-                console.print(f"  [yellow]⚠ {ticker} skipped (no chunks in database)[/yellow]")
+                console.print(f"  [yellow][WARN] {ticker} skipped (no chunks in database)[/yellow]")
 
 
 def _print_summary(results: list[tuple]):
@@ -160,7 +160,7 @@ def all(
 def bm25():
     """Rebuild BM25 sparse retrieval indexes."""
     asyncio.run(_rebuild_bm25())
-    console.print("[green]✓ BM25 indexes rebuilt[/green]")
+    console.print("[green][OK] BM25 indexes rebuilt[/green]")
 
 
 @app.command()
@@ -214,13 +214,13 @@ def pdf(
         console.print(f"[cyan]Generating embeddings and storing {len(chunks_to_store)} chunks...[/cyan]")
         async with AsyncSessionLocal() as db:
             stored = await store_chunks(chunks_to_store, db)
-            console.print(f"[green]✓ {stored} chunks stored in database[/green]")
+            console.print(f"[green][OK] {stored} chunks stored in database[/green]")
             
         # Rebuild BM25 for this ticker
         console.print(f"[cyan]Rebuilding BM25 index for {ticker}...[/cyan]")
         async with AsyncSessionLocal() as db:
             await build_bm25_index(ticker, db)
-            console.print(f"[green]✓ BM25 index rebuilt[/green]")
+            console.print(f"[green][OK] BM25 index rebuilt[/green]")
 
     asyncio.run(_ingest())
 
