@@ -168,19 +168,29 @@ async def rerank_chunks(
     """
     CrossEncoder re-ranking of candidate chunks.
     HF Task: Sentence Similarity
+    Falls back to RRF score ranking when CrossEncoder or sentence-transformers is unavailable.
     """
     if not chunks:
         return []
 
-    reranker = _get_reranker()
-    pairs = [(query, c.chunk.content) for c in chunks]
-    scores = reranker.predict(pairs)
+    try:
+        reranker = _get_reranker()
+        pairs = [(query, c.chunk.content) for c in chunks]
+        scores = reranker.predict(pairs)
 
-    for chunk, score in zip(chunks, scores):
-        chunk.reranker_score = float(score)
+        for chunk, score in zip(chunks, scores):
+            chunk.reranker_score = float(score)
 
-    reranked = sorted(chunks, key=lambda c: c.reranker_score, reverse=True)
-    return reranked[:top_k]
+        reranked = sorted(chunks, key=lambda c: c.reranker_score, reverse=True)
+        return reranked[:top_k]
+    except Exception as e:
+        logger.warning(f"CrossEncoder reranking unavailable: {e}. Falling back to Reciprocal Rank Fusion (RRF).")
+        for chunk in chunks:
+            chunk.reranker_score = chunk.rrf_score
+        
+        # Sort by RRF score
+        reranked = sorted(chunks, key=lambda c: c.rrf_score, reverse=True)
+        return reranked[:top_k]
 
 
 # ── Chunk fetcher ─────────────────────────────────────────────────────────────
