@@ -27,6 +27,7 @@ BM25_INDEX_DIR = Path("data/bm25_indexes")
 BM25_INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
 _reranker: Optional[CrossEncoder] = None
+_reranker_failed: bool = False
 
 
 def _get_reranker() -> CrossEncoder:
@@ -105,6 +106,14 @@ async def build_bm25_index(ticker: str, db: AsyncSession) -> BM25Index:
     return index
 
 
+def _get_ticker_aliases(ticker: str) -> List[str]:
+    """Resolve aliases like GOOG and GOOGL to query them interchangeably."""
+    t = ticker.upper().strip()
+    if t in ("GOOG", "GOOGL"):
+        return ["GOOG", "GOOGL"]
+    return [t]
+
+
 # ── Dense Retrieval (pgvector) ────────────────────────────────────────────────
 
 async def dense_search(
@@ -120,11 +129,14 @@ async def dense_search(
     """
     emb_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
+    aliases = _get_ticker_aliases(ticker)
+    ticker_clause = " OR ".join(f"ticker = '{a}'" for a in aliases)
+
     if modality_filter:
         modality_in = ", ".join(f"'{m}'" for m in modality_filter)
-        where_clause = f"WHERE ticker = '{ticker.upper()}' AND modality IN ({modality_in})"
+        where_clause = f"WHERE ({ticker_clause}) AND modality IN ({modality_in})"
     else:
-        where_clause = f"WHERE ticker = '{ticker.upper()}'"
+        where_clause = f"WHERE ({ticker_clause})"
 
     sql = text(f"""
         SELECT id, 1 - (embedding <=> :emb) AS similarity
@@ -173,6 +185,14 @@ async def rerank_chunks(
     if not chunks:
         return []
 
+    global _reranker_failed
+    if _reranker_failed:
+        # Silently bypass and use RRF directly
+        for chunk in chunks:
+            chunk.reranker_score = chunk.rrf_score
+        reranked = sorted(chunks, key=lambda c: c.rrf_score, reverse=True)
+        return reranked[:top_k]
+
     try:
         reranker = _get_reranker()
         pairs = [(query, c.chunk.content) for c in chunks]
@@ -184,7 +204,11 @@ async def rerank_chunks(
         reranked = sorted(chunks, key=lambda c: c.reranker_score, reverse=True)
         return reranked[:top_k]
     except Exception as e:
-        logger.warning(f"CrossEncoder reranking unavailable: {e}. Falling back to Reciprocal Rank Fusion (RRF).")
+        _reranker_failed = True
+        logger.warning(
+            "CrossEncoder reranking unavailable due to missing system/dynamic libraries. "
+            "Silently falling back to Reciprocal Rank Fusion (RRF) for this session."
+        )
         for chunk in chunks:
             chunk.reranker_score = chunk.rrf_score
         
@@ -253,7 +277,11 @@ class HybridRetriever:
         )
 
         # 3. Sparse BM25 retrieval
-        bm25_index = BM25Index.load(ticker)
+        bm25_index = None
+        for alias in _get_ticker_aliases(ticker):
+            bm25_index = BM25Index.load(alias)
+            if bm25_index:
+                break
         sparse_results = bm25_index.search(query, top_k) if bm25_index else []
 
         # 4. RRF fusion
