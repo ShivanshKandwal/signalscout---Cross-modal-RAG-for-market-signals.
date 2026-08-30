@@ -178,11 +178,15 @@ async def stream_brief(
     Stream agent events as Server-Sent Events (SSE).
     Each event is JSON: {"type": "agent_start"|"complete", ...}
     """
+    import asyncio
     import time
     t0 = time.monotonic()
 
     async def event_generator() -> AsyncIterator[str]:
         completed_brief = None
+        # Send immediate ping to prevent client connection timeout during initial agent setup
+        yield f"data: {json.dumps({'type': 'ping', 'message': 'Connection established'})}\n\n"
+        
         try:
             async for event in stream_graph(request.query, request.ticker, db):
                 if event.get("type") == "complete":
@@ -203,9 +207,23 @@ async def stream_brief(
                 BRIEF_FAILURES.labels(ticker=request.ticker).inc()
                 
             yield "data: [DONE]\n\n"
+        except asyncio.CancelledError:
+            latency = (time.monotonic() - t0) * 1000
+            logger.info(f"Client disconnected from stream for {request.ticker} after {latency:.1f}ms")
+            # Log metric without crashing background connection context
+            try:
+                async with AsyncSessionLocal() as session:
+                    await _log_request(request.ticker, "cancelled", latency, session)
+            except Exception:
+                pass
+            raise
         except Exception as e:
             latency = (time.monotonic() - t0) * 1000
-            await _log_request(request.ticker, "failed", latency, db)
+            try:
+                async with AsyncSessionLocal() as session:
+                    await _log_request(request.ticker, "failed", latency, session)
+            except Exception:
+                pass
             BRIEF_FAILURES.labels(ticker=request.ticker).inc()
             logger.error(f"SSE stream failed: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
@@ -214,7 +232,11 @@ async def stream_brief(
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
     )
 
 

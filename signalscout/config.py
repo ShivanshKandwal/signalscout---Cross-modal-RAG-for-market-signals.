@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     # ── App ───────────────────────────────────────────────────────────────────
     app_env: str = "development"
     log_level: str = "INFO"
+    sql_echo: bool = False
+    enable_reranker: bool = False
 
     # ── Database ──────────────────────────────────────────────────────────────
     database_url: str = Field(

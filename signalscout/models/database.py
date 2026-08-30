@@ -50,7 +50,7 @@ if _is_supabase_pooler:
     from sqlalchemy.pool import NullPool
     engine = create_async_engine(
         _db_url,
-        echo=settings.app_env == "development",
+        echo=settings.sql_echo,
         poolclass=NullPool,
         connect_args={
             "ssl": "require",
@@ -61,7 +61,7 @@ if _is_supabase_pooler:
 else:
     engine = create_async_engine(
         _db_url,
-        echo=settings.app_env == "development",
+        echo=settings.sql_echo,
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
