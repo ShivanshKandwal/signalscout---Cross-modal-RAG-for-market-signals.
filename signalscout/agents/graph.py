@@ -177,12 +177,21 @@ def _get_llm(timeout: int = 60):
     load_dotenv(override=True)
 
     # ── 1. Groq (fastest, generous free tier) ──────────────────────────────────
-    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    groq_key = (
+        getattr(settings, 'groq_api_key', None)
+        or os.environ.get("GROQ_API_KEY", "")
+    ).strip()
+    groq_model = (
+        getattr(settings, 'groq_model', None)
+        or os.environ.get("GROQ_MODEL", "")
+        or "openai/gpt-oss-20b"
+    ).strip()
+
     if groq_key and len(groq_key) > 10 and not groq_key.startswith("your_"):
         from langchain_openai import ChatOpenAI
-        logger.info("Using Groq (llama-3.1-8b-instant)")
-        return ChatOpenAI(
-            model="llama-3.1-8b-instant",
+        logger.info(f"Using Groq ({groq_model})")
+        groq_llm = ChatOpenAI(
+            model=groq_model,
             api_key=groq_key,
             base_url="https://api.groq.com/openai/v1",
             temperature=0.1,
@@ -190,6 +199,23 @@ def _get_llm(timeout: int = 60):
             timeout=timeout,
             max_retries=2,
         )
+        
+        # If Gemini keys are also present, wrap Groq with fallback to Gemini on failure
+        keys = _get_gemini_keys()
+        if keys:
+            class GroqWithGeminiFallback:
+                def __init__(self, primary_llm, fallback_wrapper):
+                    self.primary = primary_llm
+                    self.fallback = fallback_wrapper
+                async def ainvoke(self, *args, **kwargs):
+                    try:
+                        return await self.primary.ainvoke(*args, **kwargs)
+                    except Exception as groq_err:
+                        logger.warning(f"Groq invocation failed ({groq_err}), falling back to Gemini rotation...")
+                        return await self.fallback.ainvoke(*args, **kwargs)
+            return GroqWithGeminiFallback(groq_llm, RetryingLLM(timeout))
+            
+        return groq_llm
 
     # ── 2. Gemini with key rotation ─────────────────────────────────────────────
     keys = _get_gemini_keys()

@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     news_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-20b"
 
     # ── LangSmith ─────────────────────────────────────────────────────────────
     langsmith_api_key: str = ""
